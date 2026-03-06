@@ -1,0 +1,17 @@
+# Rust build artifacts
+target/
+
+# Spin local state
+.spin/
+
+# Environment / secrets
+.env
+*.env
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp

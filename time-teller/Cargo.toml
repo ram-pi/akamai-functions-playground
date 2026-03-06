@@ -1,0 +1,15 @@
+[package]
+name = "time-teller"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.78"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1"
+spin-sdk = "5.2.0"
+time-zone-clock = { path = "../components/time-zone-clock" }
+
+[workspace]

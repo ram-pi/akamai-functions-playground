@@ -1,0 +1,9 @@
+[package]
+name = "time-zone-clock"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.78"
+description = "Timezone metadata for the time-teller Spin app"
+
+[lib]
+crate-type = ["lib"]

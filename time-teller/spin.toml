@@ -1,0 +1,21 @@
+#:schema https://schemas.spinframework.dev/spin/manifest-v2/latest.json
+
+spin_manifest_version = 2
+
+[application]
+name = "time-teller"
+version = "0.1.0"
+authors = ["ram-pi"]
+description = "Chess-clock analog clock showing 9 world timezones"
+
+[[trigger.http]]
+route = "/..."
+component = "time-teller"
+
+[component.time-teller]
+source = "target/wasm32-wasip1/release/time_teller.wasm"
+allowed_outbound_hosts = []
+
+[component.time-teller.build]
+command = "cargo build --target wasm32-wasip1 --release"
+watch = ["src/**/*.rs", "Cargo.toml"]
