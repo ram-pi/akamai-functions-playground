@@ -6,4 +6,10 @@ rust-version = "1.78"
 description = "Timezone metadata for the time-teller Spin app"
 
 [lib]
-crate-type = ["lib"]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.36"
+
+[package.metadata.component]
+package = "ram-pi:time-zone-clock"

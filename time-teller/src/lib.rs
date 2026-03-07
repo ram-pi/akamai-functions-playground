@@ -1,6 +1,9 @@
+wit_bindgen::generate!({
+    world: "time-teller",
+});
+use bindings::ram_pi::time_zone_clock::timezones::get_timezones;
 use spin_sdk::http::{IntoResponse, Request, Response};
 use spin_sdk::http_component;
-use time_zone_clock::TIMEZONES;
 
 #[http_component]
 fn handle_time_teller(_req: Request) -> anyhow::Result<impl IntoResponse> {
@@ -13,7 +16,8 @@ fn handle_time_teller(_req: Request) -> anyhow::Result<impl IntoResponse> {
 }
 
 fn build_html() -> String {
-    let zones_js: String = TIMEZONES
+    let timezones = get_timezones();
+    let zones_js: String = timezones
         .iter()
         .map(|tz| format!(
             r##"  {{ name: "{}", iana: "{}", color: "{}" }}"##,

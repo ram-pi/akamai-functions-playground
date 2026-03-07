@@ -1,0 +1,14 @@
+package ram-pi:time-zone-clock@0.1.0;
+
+interface timezones {
+    record timezone-info {
+        name:  string,
+        iana:  string,
+        color: string,
+    }
+    get-timezones: func() -> list<timezone-info>;
+}
+
+world time-zone-clock {
+    export timezones;
+}

@@ -1,0 +1,5 @@
+package ram-pi:time-teller@0.1.0;
+
+world time-teller {
+    import ram-pi:time-zone-clock/timezones@0.1.0;
+}

@@ -1,11 +1,10 @@
-name: Publish time-teller wasm to GHCR
+name: Publish time-zone-clock wasm to GHCR
 
 on:
   push:
     branches:
       - main
     paths:
-      - "time-teller/**"
       - "components/time-zone-clock/**"
     tags:
       - "v*"
@@ -25,17 +24,23 @@ jobs:
       - name: Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-wasip1
+          targets: wasm32-wasip2
 
       - name: Cargo cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: time-teller
+          workspaces: components/time-zone-clock
+
+      - name: Install cargo-component
+        run: cargo install cargo-component --locked
+
+      - name: Install wasm-tools
+        run: cargo install wasm-tools --locked
 
       - name: Build
         run: |
-          cd time-teller
-          cargo build --target wasm32-wasip1 --release
+          cd components/time-zone-clock
+          cargo component build --target wasm32-wasip2 --release
 
       - name: Install oras
         uses: oras-project/setup-oras@v1
@@ -50,12 +55,12 @@ jobs:
       - name: Push wasm as OCI artifact (latest)
         run: |
           oras push \
-            ghcr.io/ram-pi/time-teller:latest \
-            ./time-teller/target/wasm32-wasip1/release/time_teller.wasm:application/vnd.wasm.content.layer.v1+wasm
+            ghcr.io/ram-pi/time-zone-clock:latest \
+            ./components/time-zone-clock/target/wasm32-wasip2/release/time_zone_clock.wasm:application/vnd.wasm.content.layer.v1+wasm
 
       - name: Push wasm as OCI artifact (semver tag)
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           oras push \
-            ghcr.io/ram-pi/time-teller:${{ github.ref_name }} \
-            ./time-teller/target/wasm32-wasip1/release/time_teller.wasm:application/vnd.wasm.content.layer.v1+wasm
+            ghcr.io/ram-pi/time-zone-clock:${{ github.ref_name }} \
+            ./components/time-zone-clock/target/wasm32-wasip2/release/time_zone_clock.wasm:application/vnd.wasm.content.layer.v1+wasm

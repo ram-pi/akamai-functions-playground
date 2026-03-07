@@ -1,0 +1,85 @@
+name: Deploy time-teller to Akamai Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "time-teller/**"
+      - "components/time-zone-clock/**"
+
+permissions:
+  contents: read
+
+env:
+  RUST_VERSION: "1.92.0"
+
+jobs:
+  spin:
+    runs-on: ubuntu-latest
+    name: Build Spin App
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: wasm32-wasip2
+
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            time-teller
+            components/time-zone-clock
+
+      - name: Install cargo-component
+        run: cargo install cargo-component --locked
+
+      - name: Install wasm-tools
+        run: cargo install wasm-tools --locked
+
+      - name: Install Spin
+        uses: fermyon/actions/spin/setup@v1
+
+      - name: Build time-zone-clock
+        run: cargo component build --target wasm32-wasip2 --release
+        working-directory: components/time-zone-clock
+
+      - name: Build time-teller
+        run: spin build
+        working-directory: time-teller
+
+      - name: Install the aka Plugin for Spin
+        run: spin plugins update && spin plugins install aka --yes
+
+      - name: Login to Akamai Functions
+        run: spin aka login --token ${{ secrets.AKAMAI_FUNCTIONS_TOKEN }}
+
+      - name: Check if recurring App Deployment (time-teller)
+        id: check-for-existing-app-time-teller
+        run: |
+          if spin aka apps list --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} | grep -xF "time-teller" > /dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "App time-teller found."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "App time-teller not found."
+          fi
+        working-directory: time-teller
+
+      - name: Link to existing (time-teller) App Deployment
+        if: steps.check-for-existing-app-time-teller.outputs.exists == 'true'
+        run: spin aka app link --app-name time-teller --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }}
+        working-directory: time-teller
+
+      - name: Deploying time-teller to Akamai Functions
+        if: steps.check-for-existing-app-time-teller.outputs.exists == 'false'
+        run: spin aka deploy --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} --create-name time-teller --no-confirm --skip-readiness-check
+        working-directory: time-teller
+
+      - name: ReDeploying time-teller to Akamai Functions
+        if: steps.check-for-existing-app-time-teller.outputs.exists == 'true'
+        run: spin aka deploy --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} --no-confirm --skip-readiness-check
+        working-directory: time-teller

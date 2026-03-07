@@ -13,9 +13,9 @@ route = "/..."
 component = "time-teller"
 
 [component.time-teller]
-source = "target/wasm32-wasip1/release/time_teller.wasm"
+source = "target/wasm32-wasip2/release/time_teller_composed.wasm"
 allowed_outbound_hosts = []
 
 [component.time-teller.build]
-command = "cargo build --target wasm32-wasip1 --release"
+command = "cargo component build --target wasm32-wasip2 --release && wasm-tools compose target/wasm32-wasip2/release/time_teller.wasm --def ../components/time-zone-clock/target/wasm32-wasip2/release/time_zone_clock.wasm -o target/wasm32-wasip2/release/time_teller_composed.wasm"
 watch = ["src/**/*.rs", "Cargo.toml"]
