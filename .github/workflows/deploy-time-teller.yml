@@ -6,7 +6,13 @@ on:
       - main
     paths:
       - "time-teller/**"
-      - "components/time-zone-clock/**"
+  workflow_run:
+    workflows:
+      - "Publish time-zone-clock wasm to GHCR"
+    types:
+      - completed
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -18,6 +24,9 @@ jobs:
   spin:
     runs-on: ubuntu-latest
     name: Build Spin App
+    if: >-
+      github.event_name == 'push' ||
+      github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
 
