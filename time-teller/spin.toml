@@ -17,5 +17,5 @@ source = "target/wasm32-wasip2/release/time_teller_composed.wasm"
 allowed_outbound_hosts = []
 
 [component.time-teller.build]
-command = "cargo component build --target wasm32-wasip2 --release && wasm-tools compose target/wasm32-wasip2/release/time_teller.wasm --def ../components/time-zone-clock/target/wasm32-wasip2/release/time_zone_clock.wasm -o target/wasm32-wasip2/release/time_teller_composed.wasm"
+command = "cargo component build --target wasm32-wasip2 --release && cp ../components/time-zone-clock/target/wasm32-wasip2/release/time_zone_clock.wasm /tmp/time-zone-clock.wasm && wasm-tools compose target/wasm32-wasip2/release/time_teller.wasm --definitions /tmp/time-zone-clock.wasm -o target/wasm32-wasip2/release/time_teller_composed.wasm"
 watch = ["src/**/*.rs", "Cargo.toml"]

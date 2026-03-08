@@ -9,7 +9,7 @@ description = "Timezone metadata for the time-teller Spin app"
 crate-type = ["cdylib"]
 
 [dependencies]
-wit-bindgen = "0.36"
+wit-bindgen-rt = { version = "0.41.0", features = ["bitflags"] }
 
 [package.metadata.component]
 package = "ram-pi:time-zone-clock"

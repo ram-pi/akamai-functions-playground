@@ -1,7 +1,5 @@
-wit_bindgen::generate!({
-    world: "time-zone-clock",
-});
-use exports::ram_pi::time_zone_clock::timezones::{Guest, TimezoneInfo};
+mod bindings;
+use bindings::exports::ram_pi::time_zone_clock::timezones::{Guest, TimezoneInfo};
 
 struct Component;
 
@@ -21,4 +19,4 @@ impl Guest for Component {
     }
 }
 
-export!(Component);
+bindings::export!(Component with_types_in bindings);

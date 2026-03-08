@@ -1,6 +1,4 @@
-wit_bindgen::generate!({
-    world: "time-teller",
-});
+mod bindings;
 use bindings::ram_pi::time_zone_clock::timezones::get_timezones;
 use spin_sdk::http::{IntoResponse, Request, Response};
 use spin_sdk::http_component;
