@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "time-teller/**"
+  workflow_dispatch:
   workflow_run:
     workflows:
       - "Publish time-zone-clock wasm to GHCR"
@@ -26,6 +27,7 @@ jobs:
     name: Build Spin App
     if: >-
       github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
