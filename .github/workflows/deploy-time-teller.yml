@@ -16,7 +16,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   RUST_VERSION: "1.92.0"
@@ -94,3 +94,22 @@ jobs:
         if: steps.check-for-existing-app-time-teller.outputs.exists == 'true'
         run: spin aka deploy --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} --no-confirm --skip-readiness-check
         working-directory: time-teller
+
+      - name: Get app URL
+        id: app-status
+        run: |
+          URL=$(spin aka app status --app-name time-teller | grep -oP 'https://\S+\.fwf\.app')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Persist deployed URL
+        run: |
+          URL="${{ steps.app-status.outputs.url }}"
+          if [ -z "$URL" ]; then echo "No URL captured, skipping."; exit 0; fi
+          printf '{"schemaVersion":1,"label":"EMEA/APJ Clock","message":"live","color":"brightgreen","isError":false}\n' \
+            > .github/time-teller-url.json
+          sed -i "s|(https://[a-z0-9-]*\.fwf\.app)|($URL)|g" README.md
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/time-teller-url.json README.md
+          git diff --staged --quiet || git commit -m "chore: update time-teller app URL [skip ci]"
+          git push
