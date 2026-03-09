@@ -56,6 +56,7 @@ fn build_html(views: u64) -> String {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EMEA/APJ Clock</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%231a1a1a' stroke='%23888' stroke-width='4'/><line x1='50' y1='6' x2='50' y2='18' stroke='%23ccc' stroke-width='4' stroke-linecap='round'/><line x1='94' y1='50' x2='82' y2='50' stroke='%23888' stroke-width='3' stroke-linecap='round'/><line x1='50' y1='94' x2='50' y2='82' stroke='%23888' stroke-width='3' stroke-linecap='round'/><line x1='6' y1='50' x2='18' y2='50' stroke='%23888' stroke-width='3' stroke-linecap='round'/><line x1='50' y1='50' x2='28' y2='37' stroke='white' stroke-width='6' stroke-linecap='round'/><line x1='50' y1='50' x2='76' y2='35' stroke='%23ccc' stroke-width='4' stroke-linecap='round'/><circle cx='50' cy='50' r='5' fill='%23888'/></svg>">
   <style>
     *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{
