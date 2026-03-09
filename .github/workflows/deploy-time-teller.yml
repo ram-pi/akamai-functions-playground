@@ -107,7 +107,7 @@ jobs:
           if [ -z "$URL" ]; then echo "No URL captured, skipping."; exit 0; fi
           printf '{"schemaVersion":1,"label":"EMEA/APJ Clock","message":"live","color":"brightgreen","isError":false}\n' \
             > .github/time-teller-url.json
-          sed -i "s|(https://[a-z0-9-]*\.fwf\.app)|($URL)|g" README.md
+          sed -i "/time-teller-url\.json/ s|(https://[a-z0-9-]*\.fwf\.app)|($URL)|g" README.md
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .github/time-teller-url.json README.md
