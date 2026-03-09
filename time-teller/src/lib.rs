@@ -29,7 +29,7 @@ fn build_html() -> String {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>World Clock</title>
+  <title>EMEA/APJ Clock</title>
   <style>
     *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{
@@ -90,7 +90,7 @@ fn build_html() -> String {
   </style>
 </head>
 <body>
-  <h1>World Clock</h1>
+  <h1>EMEA/APJ Clock</h1>
   <div class="grid" id="grid"></div>
 
   <script>

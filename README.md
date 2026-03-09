@@ -1,5 +1,7 @@
 # Akamai Functions Playground
 
+[![EMEA/APJ Clock](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fram-pi%2Fakamai-functions-playground%2Fmain%2F.github%2Ftime-teller-url.json&style=flat-square)](https://1792b14e-3717-462b-ba53-781bd689159a.fwf.app)
+
 A collection of templates and examples for building WebAssembly functions with [Fermyon Spin](https://developer.fermyon.com/spin).
 
 ## Templates
