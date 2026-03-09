@@ -2,10 +2,12 @@ mod bindings;
 use bindings::ram_pi::time_zone_clock::timezones::get_timezones;
 use spin_sdk::http::{IntoResponse, Request, Response};
 use spin_sdk::http_component;
+use spin_sdk::key_value::Store;
 
 #[http_component]
 fn handle_time_teller(_req: Request) -> anyhow::Result<impl IntoResponse> {
-    let html = build_html();
+    let views = increment_views()?;
+    let html = build_html(views);
     Ok(Response::builder()
         .status(200)
         .header("content-type", "text/html; charset=utf-8")
@@ -13,7 +15,18 @@ fn handle_time_teller(_req: Request) -> anyhow::Result<impl IntoResponse> {
         .build())
 }
 
-fn build_html() -> String {
+fn increment_views() -> anyhow::Result<u64> {
+    let store = Store::open_default()?;
+    let views: u64 = match store.get("views")? {
+        Some(bytes) => String::from_utf8(bytes)?.parse().unwrap_or(0),
+        None => 0,
+    };
+    let new_views = views + 1;
+    store.set("views", new_views.to_string().as_bytes())?;
+    Ok(new_views)
+}
+
+fn build_html(views: u64) -> String {
     let timezones = get_timezones();
     let zones_js: String = timezones
         .iter()
@@ -87,11 +100,22 @@ fn build_html() -> String {
       letter-spacing: 0.05em;
       color: #aaa;
     }}
+    .views-counter {{
+      margin-top: 2.5rem;
+      font-size: 0.85rem;
+      color: #555;
+      letter-spacing: 0.08em;
+    }}
+    .views-counter span {{
+      color: #888;
+      font-variant-numeric: tabular-nums;
+    }}
   </style>
 </head>
 <body>
   <h1>EMEA/APJ Clock</h1>
   <div class="grid" id="grid"></div>
+  <p class="views-counter">VISITORS: <span>{views}</span></p>
 
   <script>
     const ZONES = [
@@ -172,5 +196,5 @@ fn build_html() -> String {
   </script>
 </body>
 </html>
-"##, zones_js = zones_js)
+"##, zones_js = zones_js, views = views)
 }

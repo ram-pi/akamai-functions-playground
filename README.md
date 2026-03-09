@@ -16,7 +16,7 @@ Templates are used with `spin templates install` and `spin new` to scaffold new 
 
 | App | Trigger | Description |
 |---|---|---|
-| [`time-teller/`](time-teller/) | HTTP | Chess-clock-style world clock rendering 9 timezones as animated SVG analog clocks |
+| [`time-teller/`](time-teller/) | HTTP | Chess-clock-style world clock rendering 9 timezones as animated SVG analog clocks; tracks visitor count via KV store |
 
 ## Wasm Components
 
