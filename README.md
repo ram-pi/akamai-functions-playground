@@ -59,6 +59,17 @@ cd components/time-zone-clock && cargo component build --target wasm32-wasip2 --
 cd time-teller && spin build
 ```
 
+## Useful Commands
+
+### Akamai Functions (aka)
+
+| Command | Description |
+|---|---|
+| `spin aka apps list --account-id <id>` | List all deployed apps |
+| `spin aka app status --app-name time-teller` | Show app status and URL |
+| `spin aka app delete --app-name time-teller --account-id <id> --no-confirm` | Delete the app |
+
+
 ## CI/CD
 
 Two workflows run on changes to the relevant paths:
