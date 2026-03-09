@@ -5,8 +5,13 @@ use spin_sdk::http_component;
 use spin_sdk::key_value::Store;
 
 #[http_component]
-fn handle_time_teller(_req: Request) -> anyhow::Result<impl IntoResponse> {
-    let views = increment_views()?;
+fn handle_time_teller(req: Request) -> anyhow::Result<impl IntoResponse> {
+    let path = req.path();
+    let views = if path == "/" || path.is_empty() {
+        increment_views()?
+    } else {
+        get_views()?
+    };
     let html = build_html(views);
     Ok(Response::builder()
         .status(200)
@@ -24,6 +29,14 @@ fn increment_views() -> anyhow::Result<u64> {
     let new_views = views + 1;
     store.set("views", new_views.to_string().as_bytes())?;
     Ok(new_views)
+}
+
+fn get_views() -> anyhow::Result<u64> {
+    let store = Store::open_default()?;
+    Ok(match store.get("views")? {
+        Some(bytes) => String::from_utf8(bytes)?.parse().unwrap_or(0),
+        None => 0,
+    })
 }
 
 fn build_html(views: u64) -> String {
