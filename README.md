@@ -17,6 +17,7 @@ Templates are used with `spin templates install` and `spin new` to scaffold new 
 | App | Trigger | Description |
 |---|---|---|
 | [`time-teller/`](time-teller/) | HTTP | Chess-clock-style world clock rendering 9 timezones as animated SVG analog clocks; tracks visitor count via KV store |
+| [`wasm-explained-static-content/`](wasm-explained-static-content/) | HTTP | Static webpage explaining how WebAssembly works, served via `spin-fileserver` |
 
 ## Wasm Components
 
@@ -78,3 +79,6 @@ Two workflows run on changes to the relevant paths:
 |---|---|---|---|
 | [`publish-time-zone-clock.yml`](.github/workflows/publish-time-zone-clock.yml) | `components/time-zone-clock/**`, `v*` tags | Builds `time-zone-clock` and pushes to `ghcr.io/ram-pi/time-zone-clock` as an OCI artifact | _(uses `GITHUB_TOKEN`)_ |
 | [`deploy-time-teller.yml`](.github/workflows/deploy-time-teller.yml) | `time-teller/**`, `components/time-zone-clock/**` | Builds and composes `time-teller`, then deploys to Akamai Functions via `spin aka deploy` | `AKAMAI_FUNCTIONS_TOKEN`, `AKAMAI_FUNCTIONS_ACCOUNT_ID` |
+| [`delete-time-teller.yml`](.github/workflows/delete-time-teller.yml) | manual | Deletes `time-teller` from Akamai Functions | `AKAMAI_FUNCTIONS_TOKEN`, `AKAMAI_FUNCTIONS_ACCOUNT_ID` |
+| [`deploy-wasm-explained.yml`](.github/workflows/deploy-wasm-explained.yml) | `wasm-explained-static-content/**` | Deploys the static WebAssembly explainer page to Akamai Functions | `AKAMAI_FUNCTIONS_TOKEN`, `AKAMAI_FUNCTIONS_ACCOUNT_ID` |
+| [`delete-wasm-explained.yml`](.github/workflows/delete-wasm-explained.yml) | manual | Deletes `wasm-explained-static-content` from Akamai Functions | `AKAMAI_FUNCTIONS_TOKEN`, `AKAMAI_FUNCTIONS_ACCOUNT_ID` |

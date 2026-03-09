@@ -1,0 +1,33 @@
+name: Delete wasm-explained from Akamai Functions
+
+on:
+  workflow_dispatch:
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    name: Delete Static App
+    steps:
+      - name: Install Spin
+        uses: fermyon/actions/spin/setup@v1
+
+      - name: Install the aka Plugin for Spin
+        run: spin plugins update && spin plugins install aka --yes
+
+      - name: Login to Akamai Functions
+        run: spin aka login --token ${{ secrets.AKAMAI_FUNCTIONS_TOKEN }}
+
+      - name: Check if App exists
+        id: check
+        run: |
+          if spin aka apps list --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} | grep -xF "wasm-explained-static-content" > /dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "App wasm-explained-static-content found."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "App wasm-explained-static-content not found, nothing to delete."
+          fi
+
+      - name: Delete wasm-explained from Akamai Functions
+        if: steps.check.outputs.exists == 'true'
+        run: spin aka app delete --app-name wasm-explained-static-content --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} --no-confirm

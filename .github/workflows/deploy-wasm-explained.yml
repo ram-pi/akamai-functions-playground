@@ -1,0 +1,52 @@
+name: Deploy wasm-explained to Akamai Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "wasm-explained-static-content/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Static App
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Spin
+        uses: fermyon/actions/spin/setup@v1
+
+      - name: Install the aka Plugin for Spin
+        run: spin plugins update && spin plugins install aka --yes
+
+      - name: Login to Akamai Functions
+        run: spin aka login --token ${{ secrets.AKAMAI_FUNCTIONS_TOKEN }}
+
+      - name: Check if App exists
+        id: check
+        run: |
+          if spin aka apps list --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} | grep -xF "wasm-explained-static-content" > /dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "App wasm-explained-static-content found."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "App wasm-explained-static-content not found."
+          fi
+        working-directory: wasm-explained-static-content
+
+      - name: Link to existing App
+        if: steps.check.outputs.exists == 'true'
+        run: spin aka app link --app-name wasm-explained-static-content --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }}
+        working-directory: wasm-explained-static-content
+
+      - name: Deploy (new)
+        if: steps.check.outputs.exists == 'false'
+        run: spin aka deploy --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} --create-name wasm-explained-static-content --no-confirm --skip-readiness-check
+        working-directory: wasm-explained-static-content
+
+      - name: Redeploy (existing)
+        if: steps.check.outputs.exists == 'true'
+        run: spin aka deploy --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} --no-confirm --skip-readiness-check
+        working-directory: wasm-explained-static-content

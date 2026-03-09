@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How WebAssembly Works</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='14' fill='%23009BDE'/><text x='50' y='73' font-family='Arial,sans-serif' font-size='62' font-weight='bold' text-anchor='middle' fill='white'>A</text></svg>">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --wasm: #7c3aed;
+    --wasm-light: #a78bfa;
+    --native: #059669;
+    --native-light: #34d399;
+    --source: #d97706;
+    --source-light: #fbbf24;
+    --runtime: #0ea5e9;
+    --runtime-light: #38bdf8;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #f0abfc;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  header {
+    text-align: center;
+    padding: 56px 24px 32px;
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--wasm), transparent);
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--wasm-light);
+    border: 1px solid var(--wasm);
+    padding: 4px 14px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    animation: pulse-border 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--wasm); box-shadow: 0 0 8px rgba(124,58,237,0.3); }
+    50% { border-color: var(--wasm-light); box-shadow: 0 0 20px rgba(167,139,250,0.5); }
+  }
+
+  h1 {
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 0%, var(--wasm-light) 50%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1px;
+  }
+
+  .diagram {
+    max-width: 1100px;
+    margin: 48px auto;
+    padding: 0 24px 64px;
+  }
+
+  /* ─── SECTION LABEL ─────────────────────────────── */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ─── COMPILATION PIPELINE ──────────────────────── */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+  }
+
+  .pipe-stage {
+    flex: 1;
+    min-width: 140px;
+    position: relative;
+    cursor: default;
+  }
+
+  .pipe-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 16px;
+    margin: 0 6px;
+    height: 100%;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pipe-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+  }
+
+  .pipe-stage:hover .pipe-card {
+    transform: translateY(-4px);
+    border-color: rgba(255,255,255,0.1);
+  }
+
+  .pipe-stage:hover .pipe-card::before { opacity: 1; }
+
+  .stage-source .pipe-card::before { background: var(--source); }
+  .stage-compile .pipe-card::before { background: var(--wasm); }
+  .stage-wasm .pipe-card::before { background: linear-gradient(90deg, var(--wasm), var(--accent)); }
+  .stage-engine .pipe-card::before { background: var(--runtime); }
+  .stage-native .pipe-card::before { background: var(--native); }
+
+  .stage-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .stage-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .stage-source .stage-title { color: var(--source-light); }
+  .stage-compile .stage-title { color: var(--wasm-light); }
+  .stage-wasm .stage-title { color: var(--accent); }
+  .stage-engine .stage-title { color: var(--runtime-light); }
+  .stage-native .stage-title { color: var(--native-light); }
+
+  .stage-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .pipe-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .pipe-arrow::after {
+    content: '→';
+    animation: arrow-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes arrow-pulse {
+    0%, 100% { opacity: 0.4; transform: translateX(0); }
+    50% { opacity: 1; transform: translateX(2px); }
+  }
+
+  /* ─── ARCHITECTURE AGNOSTICISM ─────────────────── */
+  .arch-box {
+    background: var(--surface);
+    border: 1px solid rgba(52,211,153,0.25);
+    border-radius: 10px;
+    padding: 28px;
+    margin-bottom: 48px;
+    box-shadow: 0 0 40px rgba(52,211,153,0.06);
+  }
+  .arch-headline {
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 28px;
+    color: #94a3b8;
+  }
+  .arch-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--native-light);
+    border: 1px solid var(--native);
+    padding: 2px 10px;
+    border-radius: 2px;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  .arch-hl  { color: #fff; font-weight: 700; }
+  .arch-hl2 { color: var(--native-light); font-weight: 700; }
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .arch-wasm-col { flex-shrink: 0; }
+  .arch-wasm-card {
+    background: rgba(124,58,237,0.12);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 8px;
+    padding: 20px 24px;
+    text-align: center;
+    min-width: 160px;
+    box-shadow: 0 0 24px rgba(124,58,237,0.15);
+  }
+  .arch-wasm-icon { font-size: 32px; margin-bottom: 8px; }
+  .arch-wasm-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .arch-wasm-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .arch-targets { flex: 1; min-width: 280px; }
+  .arch-arrow-group { display: flex; flex-direction: column; gap: 8px; }
+  .arch-target {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 6px;
+    padding: 10px 14px;
+    transition: all 0.3s;
+    cursor: default;
+  }
+  .arch-target:hover { transform: translateX(4px); }
+  .arch-target-x86 { background: rgba(14,165,233,0.07); border: 1px solid rgba(14,165,233,0.2); }
+  .arch-target-arm { background: rgba(217,119,6,0.07); border: 1px solid rgba(217,119,6,0.2); }
+  .arch-target-rv  { background: rgba(52,211,153,0.07); border: 1px solid rgba(52,211,153,0.2); }
+  .arch-target-arrow {
+    font-size: 16px;
+    color: var(--muted);
+    animation: arrow-pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  .arch-target-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .arch-target-engine { font-size: 12px; font-weight: 700; }
+  .arch-target-x86 .arch-target-engine { color: var(--runtime-light); }
+  .arch-target-arm .arch-target-engine { color: var(--source-light); }
+  .arch-target-rv  .arch-target-engine { color: var(--native-light); }
+  .arch-target-isa { font-size: 10px; color: var(--muted); }
+  .arch-target-chip { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .arch-note {
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--native);
+    border-radius: 0 6px 6px 0;
+    padding: 14px 16px;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.7;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  .arch-note-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .arch-note code { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .arch-note strong { color: #e2e8f0; }
+  .arch-aot {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .arch-aot-title {
+    padding: 8px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .arch-aot-body {
+    padding: 14px 16px;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+  }
+  .arch-aot-code {
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--source-light);
+    background: rgba(217,119,6,0.06);
+    border: 1px solid rgba(217,119,6,0.15);
+    border-radius: 4px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .arch-aot-tag {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #ef4444;
+    border: 1px solid rgba(239,68,68,0.3);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  /* ─── COMPILER EXPLAINER ────────────────────────── */
+  .compiler-explainer {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 16px;
+  }
+
+  .ce-col {
+    flex: 1;
+    min-width: 160px;
+    padding: 0 12px;
+  }
+
+  .ce-flow-arrow {
+    display: flex;
+    align-items: center;
+    padding-top: 36px;
+    color: var(--muted);
+    font-size: 20px;
+    animation: arrow-pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  .ce-col-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    line-height: 1.4;
+    min-height: 28px;
+  }
+
+  .ce-langs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ce-lang {
+    font-size: 12px;
+    color: var(--source-light);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ce-compiler-rows { display: flex; flex-direction: column; gap: 7px; }
+
+  .ce-compiler-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  .ce-lang-tag {
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 32px;
+    text-align: center;
+  }
+  .ce-lang-tag.rust { background: rgba(249,115,22,0.15); color: #fb923c; }
+  .ce-lang-tag.c    { background: rgba(14,165,233,0.15);  color: #38bdf8; }
+  .ce-lang-tag.go   { background: rgba(52,211,153,0.15);  color: #34d399; }
+  .ce-lang-tag.as   { background: rgba(167,139,250,0.15); color: #a78bfa; }
+
+  .ce-arrow-sm { color: var(--muted); }
+
+  .ce-tool { color: var(--wasm-light); font-weight: 700; flex: 1; }
+
+  .ce-via {
+    font-size: 10px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+
+  .ce-llvm-note {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.5;
+    border-left: 2px solid var(--wasm);
+    padding-left: 8px;
+  }
+  .ce-llvm-note strong { color: var(--wasm-light); }
+
+  .ce-wasm-output {
+    background: rgba(124,58,237,0.1);
+    border: 1px solid rgba(124,58,237,0.35);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .ce-wasm-icon { font-size: 28px; margin-bottom: 6px; }
+  .ce-wasm-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .ce-wasm-tags { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+
+  .ce-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--native-light);
+    border: 1px solid rgba(52,211,153,0.25);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  .ce-engine-rows { display: flex; flex-direction: column; gap: 8px; }
+
+  .ce-engine-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: rgba(14,165,233,0.05);
+    border: 1px solid rgba(14,165,233,0.15);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s;
+  }
+
+  .ce-engine-row.ce-engine-highlight {
+    background: rgba(124,58,237,0.08);
+    border-color: rgba(124,58,237,0.3);
+  }
+
+  .ce-ctx { font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .ce-engine-name { font-size: 11px; color: var(--runtime-light); font-weight: 700; }
+  .ce-engine-row.ce-engine-highlight .ce-engine-name { color: var(--wasm-light); }
+
+  .ce-engine-note {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.5;
+    border-left: 2px solid var(--runtime);
+    padding-left: 8px;
+  }
+  .ce-engine-note strong { color: var(--runtime-light); }
+
+  /* ─── SPIN SECTION ──────────────────────────────── */
+  .spin-box {
+    background: var(--surface);
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 10px;
+    padding: 28px;
+    margin-bottom: 48px;
+    box-shadow: 0 0 40px rgba(124,58,237,0.07);
+  }
+
+  .spin-intro {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .spin-logo { font-size: 40px; flex-shrink: 0; }
+
+  .spin-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--wasm-light);
+    margin-bottom: 8px;
+  }
+
+  .spin-desc {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.7;
+  }
+
+  .spin-desc code { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .spin-desc strong { color: #e2e8f0; }
+  .spin-desc em { color: var(--source-light); font-style: normal; }
+
+  .spin-flow-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .spin-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .spin-step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .spin-step:hover {
+    border-color: rgba(124,58,237,0.35);
+    background: rgba(124,58,237,0.05);
+  }
+
+  .spin-step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(124,58,237,0.2);
+    border: 1px solid var(--wasm);
+    color: var(--wasm-light);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .spin-step-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 5px;
+  }
+
+  .spin-step-desc {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+  }
+
+  .spin-step-desc code { color: var(--wasm-light); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  .spin-compare {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .spin-compare-col {
+    flex: 1;
+    min-width: 160px;
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .spin-compare-plain { background: rgba(100,116,139,0.08); border: 1px solid rgba(100,116,139,0.2); }
+  .spin-compare-spin  { background: rgba(124,58,237,0.08);  border: 1px solid rgba(124,58,237,0.25); }
+  .spin-compare-result{ background: rgba(52,211,153,0.08);  border: 1px solid rgba(52,211,153,0.25); }
+
+  .spin-compare-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .spin-compare-plain  .spin-compare-title { color: var(--muted); }
+  .spin-compare-spin   .spin-compare-title { color: var(--wasm-light); }
+  .spin-compare-result .spin-compare-title { color: var(--native-light); }
+
+  .spin-compare-items { display: flex; flex-direction: column; gap: 6px; }
+
+  .spin-compare-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .spin-compare-item.muted { color: #475569; }
+
+  .spin-compare-plus {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--muted);
+    flex-shrink: 0;
+    padding: 0 4px;
+  }
+
+  /* ─── WASM BINARY FORMAT ────────────────────────── */
+  .binary-box {
+    background: var(--surface);
+    border: 1px solid var(--wasm);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 48px;
+    box-shadow: 0 0 40px rgba(124,58,237,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .binary-box::after {
+    content: 'WASM';
+    position: absolute;
+    top: -20px; right: 24px;
+    font-size: 80px;
+    font-weight: 800;
+    color: rgba(124,58,237,0.06);
+    pointer-events: none;
+    letter-spacing: -4px;
+  }
+
+  .binary-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--wasm-light);
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .binary-sections {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .bin-section {
+    background: rgba(124,58,237,0.1);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .bin-section:hover {
+    background: rgba(124,58,237,0.25);
+    border-color: var(--wasm-light);
+    transform: scale(1.05);
+  }
+
+  .bin-section .s-name {
+    color: var(--accent);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .bin-section .s-desc {
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  /* ─── RUNTIME ENVIRONMENT ───────────────────────── */
+  .runtime-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 600px) {
+    .runtime-grid { grid-template-columns: 1fr; }
+    .pipeline { flex-direction: column; }
+    .pipe-arrow { transform: rotate(90deg); width: auto; height: 24px; }
+  }
+
+  .runtime-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.3s;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .runtime-card:hover {
+    border-color: rgba(14,165,233,0.4);
+    box-shadow: 0 4px 24px rgba(14,165,233,0.1);
+    transform: translateY(-2px);
+  }
+
+  .runtime-card .rc-icon { font-size: 22px; margin-bottom: 10px; }
+  .runtime-card .rc-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--runtime-light);
+    margin-bottom: 6px;
+  }
+
+  .runtime-card .rc-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ─── KEY PROPERTIES ────────────────────────────── */
+  .props-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 48px;
+  }
+
+  .prop-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .prop-item:hover {
+    border-color: var(--native-light);
+    box-shadow: 0 0 20px rgba(52,211,153,0.1);
+    transform: translateY(-2px);
+  }
+
+  .prop-icon { font-size: 20px; margin-bottom: 8px; }
+  .prop-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--native-light);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .prop-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ─── HOST ENVIRONMENT ──────────────────────────── */
+  .host-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .host-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--runtime-light);
+    margin-bottom: 20px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .host-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .layer {
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .layer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03));
+  }
+
+  .layer:hover::before { opacity: 1; }
+
+  .layer-app { background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.2); }
+  .layer-wasm { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.3); }
+  .layer-engine { background: rgba(217,119,6,0.08); border: 1px solid rgba(217,119,6,0.2); }
+  .layer-os { background: rgba(5,150,105,0.08); border: 1px solid rgba(5,150,105,0.2); }
+  .layer-hw { background: rgba(30,30,46,0.8); border: 1px solid var(--border); }
+
+  .layer-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .layer-app .layer-dot { background: var(--runtime-light); }
+  .layer-wasm .layer-dot { background: var(--wasm-light); }
+  .layer-engine .layer-dot { background: var(--source-light); }
+  .layer-os .layer-dot { background: var(--native-light); }
+  .layer-hw .layer-dot { background: var(--muted); }
+
+  .layer-name {
+    font-weight: 700;
+    flex: 1;
+  }
+
+  .layer-app .layer-name { color: var(--runtime-light); }
+  .layer-wasm .layer-name { color: var(--wasm-light); }
+  .layer-engine .layer-name { color: var(--source-light); }
+  .layer-os .layer-name { color: var(--native-light); }
+  .layer-hw .layer-name { color: var(--muted); }
+
+  .layer-detail { color: var(--muted); font-size: 10px; }
+
+  .layer-connector {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1;
+    margin: -4px 0;
+    opacity: 0.5;
+  }
+
+  /* ─── CODE SNIPPET ──────────────────────────────── */
+  .code-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 600px) { .code-compare { grid-template-columns: 1fr; } }
+
+  .code-block {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-header {
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .code-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  pre {
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: #94a3b8;
+  }
+
+  .kw { color: var(--wasm-light); }
+  .fn { color: var(--source-light); }
+  .num { color: var(--native-light); }
+  .cm { color: #475569; font-style: italic; }
+  .str { color: var(--runtime-light); }
+  .type { color: var(--accent); }
+
+  /* Animated dots for "processing" */
+  .processing {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+  }
+  .processing span {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--wasm-light);
+    animation: dot-bounce 1.2s ease-in-out infinite;
+  }
+  .processing span:nth-child(2) { animation-delay: 0.2s; }
+  .processing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dot-bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-4px); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">architecture explainer</div>
+  <h1>How WebAssembly Works</h1>
+  <p class="subtitle">// compile once · run anywhere · near-native speed</p>
+</header>
+
+<div class="diagram">
+
+  <!-- COMPILATION PIPELINE -->
+  <div class="section-label">01 — compilation pipeline</div>
+
+  <!-- Compiler explainer -->
+  <div class="compiler-explainer">
+    <div class="ce-col ce-sources">
+      <div class="ce-col-title">① you write code in any language</div>
+      <div class="ce-langs">
+        <div class="ce-lang">🦀 <span>Rust</span></div>
+        <div class="ce-lang">🔵 <span>C / C++</span></div>
+        <div class="ce-lang">🐹 <span>Go</span></div>
+        <div class="ce-lang">📘 <span>AssemblyScript</span></div>
+      </div>
+    </div>
+
+    <div class="ce-flow-arrow">→</div>
+
+    <div class="ce-col ce-compilers">
+      <div class="ce-col-title">② a language-specific tool compiles it</div>
+      <div class="ce-compiler-rows">
+        <div class="ce-compiler-row">
+          <span class="ce-lang-tag rust">Rust</span>
+          <span class="ce-arrow-sm">→</span>
+          <span class="ce-tool">wasm-pack</span>
+          <span class="ce-via">via LLVM</span>
+        </div>
+        <div class="ce-compiler-row">
+          <span class="ce-lang-tag c">C/C++</span>
+          <span class="ce-arrow-sm">→</span>
+          <span class="ce-tool">Emscripten</span>
+          <span class="ce-via">via LLVM</span>
+        </div>
+        <div class="ce-compiler-row">
+          <span class="ce-lang-tag go">Go</span>
+          <span class="ce-arrow-sm">→</span>
+          <span class="ce-tool">TinyGo</span>
+          <span class="ce-via">via LLVM</span>
+        </div>
+        <div class="ce-compiler-row">
+          <span class="ce-lang-tag as">AS</span>
+          <span class="ce-arrow-sm">→</span>
+          <span class="ce-tool">asc</span>
+          <span class="ce-via">direct</span>
+        </div>
+      </div>
+      <div class="ce-llvm-note">💡 Most languages share <strong>LLVM</strong> as the backend — different frontends, same WASM output</div>
+    </div>
+
+    <div class="ce-flow-arrow">→</div>
+
+    <div class="ce-col ce-output">
+      <div class="ce-col-title">③ you get one portable file</div>
+      <div class="ce-wasm-output">
+        <div class="ce-wasm-icon">🔷</div>
+        <div class="ce-wasm-name">my-app.wasm</div>
+        <div class="ce-wasm-tags">
+          <span class="ce-tag">arch-agnostic</span>
+          <span class="ce-tag">ship anywhere</span>
+          <span class="ce-tag">no recompile</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ce-flow-arrow">→</div>
+
+    <div class="ce-col ce-engines">
+      <div class="ce-col-title">④ an engine runs it on the target machine</div>
+      <div class="ce-engine-rows">
+        <div class="ce-engine-row">
+          <span class="ce-ctx">Browser</span>
+          <span class="ce-engine-name">V8 / SpiderMonkey</span>
+        </div>
+        <div class="ce-engine-row">
+          <span class="ce-ctx">Server / CLI</span>
+          <span class="ce-engine-name">Wasmtime / WasmEdge</span>
+        </div>
+        <div class="ce-engine-row ce-engine-highlight">
+          <span class="ce-ctx">Kubernetes</span>
+          <span class="ce-engine-name">containerd-shim-spin → Wasmtime</span>
+        </div>
+      </div>
+      <div class="ce-engine-note">The engine is a <strong>category</strong>. Wasmtime is one popular choice for server-side use.</div>
+    </div>
+  </div>
+
+  <!-- ARCH AGNOSTIC -->
+  <div class="section-label">02 — architecture agnosticism</div>
+  <div class="arch-box">
+    <div class="arch-headline">
+      <span class="arch-badge">KEY INSIGHT</span>
+      The <span class="arch-hl">.wasm binary has zero knowledge of CPU architecture.</span><br>
+      It's the <span class="arch-hl2">runtime's responsibility</span> to translate bytecode to the host ISA.
+    </div>
+    <div class="arch-flow">
+      <div class="arch-wasm-col">
+        <div class="arch-wasm-card">
+          <div class="arch-wasm-icon">🔷</div>
+          <div class="arch-wasm-label">my-module.wasm</div>
+          <div class="arch-wasm-sub">same file · forever · no recompile needed</div>
+        </div>
+      </div>
+      <div class="arch-targets">
+        <div class="arch-arrow-group">
+          <div class="arch-target arch-target-x86">
+            <div class="arch-target-arrow">→</div>
+            <div class="arch-target-body">
+              <span class="arch-target-engine">wasmtime on x86_64</span>
+              <span class="arch-target-isa">emits x86 machine code</span>
+            </div>
+            <div class="arch-target-chip">🖥️ Intel / AMD</div>
+          </div>
+          <div class="arch-target arch-target-arm">
+            <div class="arch-target-arrow">→</div>
+            <div class="arch-target-body">
+              <span class="arch-target-engine">wasmtime on ARM64</span>
+              <span class="arch-target-isa">emits ARM machine code</span>
+            </div>
+            <div class="arch-target-chip">📱 Apple M / AWS Graviton</div>
+          </div>
+          <div class="arch-target arch-target-rv">
+            <div class="arch-target-arrow">→</div>
+            <div class="arch-target-body">
+              <span class="arch-target-engine">wasmtime on RISC-V</span>
+              <span class="arch-target-isa">emits RISC-V machine code</span>
+            </div>
+            <div class="arch-target-chip">🔬 embedded / SiFive</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="arch-note">
+      <span class="arch-note-icon">💡</span>
+      <span>The <code>.wasm</code> is bytecode for an <strong>abstract stack machine</strong> — no registers, no calling conventions, no ISA-specific instructions. The engine's JIT backend owns all of that. This is why a module compiled on your MacBook M3 runs unchanged on your x86_64 Linode nodes.</span>
+    </div>
+    <div class="arch-aot">
+      <div class="arch-aot-title">AOT exception — pre-compiled artifacts</div>
+      <div class="arch-aot-body">
+        Runtimes can optionally AOT-compile to a native artifact for faster cold starts — but that artifact is arch-specific and is purely an optimisation. The source <code>.wasm</code> remains the portable truth.
+        <div class="arch-aot-code">wasmtime compile --target x86_64 my-module.wasm -o my-module.cwasm<span class="arch-aot-tag">arch-specific</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RUNTIME -->
+  <div class="section-label">03 — runtime execution model</div>
+  <div class="runtime-grid">
+    <div class="runtime-card">
+      <div class="rc-icon">🧱</div>
+      <div class="rc-title">Stack Machine</div>
+      <div class="rc-desc">WASM uses a virtual stack machine. Instructions push/pop values. No registers exposed — all operations work on the evaluation stack, making validation simple and secure.</div>
+    </div>
+    <div class="runtime-card">
+      <div class="rc-icon">🧠</div>
+      <div class="rc-title">Linear Memory</div>
+      <div class="rc-desc">Flat, contiguous byte array. Starts at 64KB pages. Grows via memory.grow. Completely isolated from JS heap — no pointer escape, no memory corruption outside the sandbox.</div>
+    </div>
+    <div class="runtime-card">
+      <div class="rc-icon">🛡️</div>
+      <div class="rc-title">Sandboxed Execution</div>
+      <div class="rc-desc">No syscalls, no filesystem, no network access by default. Everything must be explicitly imported from the host. WASM can only do what the host allows — capability-based security.</div>
+    </div>
+    <div class="runtime-card">
+      <div class="rc-icon">🔀</div>
+      <div class="rc-title">JIT Compilation</div>
+      <div class="rc-desc">Engines (V8, SpiderMonkey, Wasmtime) validate bytecode once, then JIT-compile to native machine code targeting the host CPU. Streaming compilation starts before full download.</div>
+    </div>
+  </div>
+
+  <!-- KEY PROPERTIES -->
+  <div class="section-label">04 — key properties</div>
+  <div class="props-grid">
+    <div class="prop-item">
+      <div class="prop-icon">🌐</div>
+      <div class="prop-title">Portable</div>
+      <div class="prop-desc">Same .wasm runs on browser, Node.js, Deno, Wasmtime, edge runtimes — any host with a WASM engine, any CPU arch.</div>
+    </div>
+    <div class="prop-item">
+      <div class="prop-icon">⚡</div>
+      <div class="prop-title">Fast</div>
+      <div class="prop-desc">Predictable performance. JIT to native, no GC pauses for WASM memory. 1.5–2× slower than native C at worst.</div>
+    </div>
+    <div class="prop-item">
+      <div class="prop-icon">🔒</div>
+      <div class="prop-title">Secure</div>
+      <div class="prop-desc">Formally verified type system. Memory bounds checked. No undefined behavior. Capability-based access model.</div>
+    </div>
+    <div class="prop-item">
+      <div class="prop-icon">🗜️</div>
+      <div class="prop-title">Compact</div>
+      <div class="prop-desc">Binary format is dense. Typical modules are 2–5× smaller than equivalent JS. Gzips well for fast delivery.</div>
+    </div>
+    <div class="prop-item">
+      <div class="prop-icon">🔗</div>
+      <div class="prop-title">Interoperable</div>
+      <div class="prop-desc">JS ↔ WASM calls are efficient. WIT (WASM Interface Types) enables richer cross-language data exchange.</div>
+    </div>
+    <div class="prop-item">
+      <div class="prop-icon">🧩</div>
+      <div class="prop-title">Modular</div>
+      <div class="prop-desc">Each module is self-contained with explicit imports/exports. WASI extends this to OS-level capabilities.</div>
+    </div>
+  </div>
+  <!-- SPIN -->
+  <div class="section-label">05 — spin & spinkube — wasm for the cloud</div>
+  <div class="spin-box">
+    <div class="spin-intro">
+      <div class="spin-logo">🌀</div>
+      <div class="spin-intro-text">
+        <div class="spin-title">What is Spin?</div>
+        <div class="spin-desc">Raw WASM gives you a fast, portable binary — but it has no opinion on <em>how to serve HTTP requests</em>, route traffic, or scale on Kubernetes. <strong>Spin</strong> (by Fermyon, now part of Akamai) is the framework that fills that gap. It wraps your <code>.wasm</code> module in a trigger-based runtime, turning it into a deployable microservice.</div>
+      </div>
+    </div>
+
+    <div class="spin-flow">
+      <div class="spin-flow-title">What Spin adds to the WASM flow</div>
+      <div class="spin-steps">
+        <div class="spin-step">
+          <div class="spin-step-num">1</div>
+          <div class="spin-step-body">
+            <div class="spin-step-title">spin.toml — the manifest</div>
+            <div class="spin-step-desc">Defines your app: which <code>.wasm</code> file handles which HTTP route, what environment variables it gets, what host capabilities it's allowed to use (key-value store, outbound HTTP, etc.).</div>
+          </div>
+        </div>
+        <div class="spin-step">
+          <div class="spin-step-num">2</div>
+          <div class="spin-step-body">
+            <div class="spin-step-title">Triggers — HTTP, Redis, cron</div>
+            <div class="spin-step-desc">Spin listens for an event (an incoming HTTP request, a message on a queue) and instantiates your <code>.wasm</code> module just to handle that one request — then tears it down. True per-request isolation with near-zero cold start.</div>
+          </div>
+        </div>
+        <div class="spin-step">
+          <div class="spin-step-num">3</div>
+          <div class="spin-step-body">
+            <div class="spin-step-title">Built-in capabilities via WASI</div>
+            <div class="spin-step-desc">Outbound HTTP, key-value stores, SQLite, Redis, variables — all exposed to your module as safe WASI interfaces. Your code never talks to the OS directly; Spin mediates everything.</div>
+          </div>
+        </div>
+        <div class="spin-step">
+          <div class="spin-step-num">4</div>
+          <div class="spin-step-body">
+            <div class="spin-step-title">SpinKube — Spin on Kubernetes</div>
+            <div class="spin-step-desc">SpinKube brings a <code>SpinApp</code> CRD to your cluster. Instead of a container image, you ship a <code>.wasm</code> OCI artifact. The <code>containerd-shim-spin</code> on each LKE node runs it directly via Wasmtime — no Docker image, no OS layer inside the pod.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spin-compare">
+      <div class="spin-compare-col spin-compare-plain">
+        <div class="spin-compare-title">🔷 Raw WASM</div>
+        <div class="spin-compare-items">
+          <div class="spin-compare-item">portable bytecode ✓</div>
+          <div class="spin-compare-item">fast execution ✓</div>
+          <div class="spin-compare-item muted">no HTTP routing ✗</div>
+          <div class="spin-compare-item muted">no host capabilities ✗</div>
+          <div class="spin-compare-item muted">manual Kubernetes setup ✗</div>
+        </div>
+      </div>
+      <div class="spin-compare-plus">+</div>
+      <div class="spin-compare-col spin-compare-spin">
+        <div class="spin-compare-title">🌀 Spin / SpinKube</div>
+        <div class="spin-compare-items">
+          <div class="spin-compare-item">HTTP / event triggers ✓</div>
+          <div class="spin-compare-item">WASI capabilities ✓</div>
+          <div class="spin-compare-item">SpinApp CRD on K8s ✓</div>
+          <div class="spin-compare-item">OCI artifact distribution ✓</div>
+          <div class="spin-compare-item">per-request isolation ✓</div>
+        </div>
+      </div>
+      <div class="spin-compare-plus">=</div>
+      <div class="spin-compare-col spin-compare-result">
+        <div class="spin-compare-title">⚡ Result</div>
+        <div class="spin-compare-items">
+          <div class="spin-compare-item">serverless-style microservices</div>
+          <div class="spin-compare-item">lighter than containers</div>
+          <div class="spin-compare-item">runs on your LKE nodes</div>
+          <div class="spin-compare-item">x86 + ARM, same artifact</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
