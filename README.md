@@ -2,6 +2,8 @@
 
 [![EMEA/APJ Clock](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fram-pi%2Fakamai-functions-playground%2Fmain%2F.github%2Ftime-teller-url.json&style=flat-square)](https://1792b14e-3717-462b-ba53-781bd689159a.fwf.app)
 [![Wasm Explained](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fram-pi%2Fakamai-functions-playground%2Fmain%2F.github%2Fwasm-explained-url.json&style=flat-square)](https://58372415-f6e8-4cf3-9078-48c93c56d7aa.fwf.app)
+[![CIDR Calculator](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fram-pi%2Fakamai-functions-playground%2Fmain%2F.github%2Fcidr-calculator-url.json&style=flat-square)](https://placeholder.fwf.app)
+
 
 A collection of templates and examples for building WebAssembly functions with [Fermyon Spin](https://developer.fermyon.com/spin).
 
@@ -19,6 +21,7 @@ Templates are used with `spin templates install` and `spin new` to scaffold new 
 |---|---|---|
 | [`time-teller/`](time-teller/) | HTTP | Chess-clock-style world clock rendering 9 timezones as animated SVG analog clocks; tracks visitor count via KV store |
 | [`wasm-explained-static-content/`](wasm-explained-static-content/) | HTTP | Static webpage explaining how WebAssembly works, served via `spin-fileserver` |
+| [`cidr-calculator/`](cidr-calculator/) | HTTP | RFC 1918 private CIDR calculator — range reference, IP inspector with bit visualizer, subnet splitter |
 
 ## Wasm Components
 
@@ -83,3 +86,5 @@ Two workflows run on changes to the relevant paths:
 | [`delete-time-teller.yml`](.github/workflows/delete-time-teller.yml) | manual | Deletes `time-teller` from Akamai Functions | `AKAMAI_FUNCTIONS_TOKEN`, `AKAMAI_FUNCTIONS_ACCOUNT_ID` |
 | [`deploy-wasm-explained.yml`](.github/workflows/deploy-wasm-explained.yml) | `wasm-explained-static-content/**` | Deploys the static WebAssembly explainer page to Akamai Functions | `AKAMAI_FUNCTIONS_TOKEN`, `AKAMAI_FUNCTIONS_ACCOUNT_ID` |
 | [`delete-wasm-explained.yml`](.github/workflows/delete-wasm-explained.yml) | manual | Deletes `wasm-explained-static-content` from Akamai Functions | `AKAMAI_FUNCTIONS_TOKEN`, `AKAMAI_FUNCTIONS_ACCOUNT_ID` |
+| [`deploy-cidr-calculator.yml`](.github/workflows/deploy-cidr-calculator.yml) | `cidr-calculator/**` | Deploys the RFC 1918 CIDR calculator to Akamai Functions | `AKAMAI_FUNCTIONS_TOKEN`, `AKAMAI_FUNCTIONS_ACCOUNT_ID` |
+| [`delete-cidr-calculator.yml`](.github/workflows/delete-cidr-calculator.yml) | manual | Deletes `cidr-calculator` from Akamai Functions | `AKAMAI_FUNCTIONS_TOKEN`, `AKAMAI_FUNCTIONS_ACCOUNT_ID` |

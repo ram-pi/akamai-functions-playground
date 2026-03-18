@@ -1,0 +1,74 @@
+name: Deploy cidr-calculator to Akamai Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "cidr-calculator/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Static App
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Spin
+        uses: fermyon/actions/spin/setup@v1
+
+      - name: Install the aka Plugin for Spin
+        run: spin plugins update && spin plugins install aka --yes
+
+      - name: Login to Akamai Functions
+        run: spin aka login --token ${{ secrets.AKAMAI_FUNCTIONS_TOKEN }}
+
+      - name: Check if App exists
+        id: check
+        run: |
+          if spin aka apps list --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} | grep -xF "cidr-calculator" > /dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "App cidr-calculator found."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "App cidr-calculator not found."
+          fi
+        working-directory: cidr-calculator
+
+      - name: Link to existing App
+        if: steps.check.outputs.exists == 'true'
+        run: spin aka app link --app-name cidr-calculator --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }}
+        working-directory: cidr-calculator
+
+      - name: Deploy (new)
+        if: steps.check.outputs.exists == 'false'
+        run: spin aka deploy --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} --create-name cidr-calculator --no-confirm --skip-readiness-check
+        working-directory: cidr-calculator
+
+      - name: Redeploy (existing)
+        if: steps.check.outputs.exists == 'true'
+        run: spin aka deploy --account-id ${{ secrets.AKAMAI_FUNCTIONS_ACCOUNT_ID }} --no-confirm --skip-readiness-check
+        working-directory: cidr-calculator
+
+      - name: Get app URL
+        id: app-status
+        run: |
+          URL=$(spin aka app status --app-name cidr-calculator | grep -oP 'https://\S+\.fwf\.app')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Persist deployed URL
+        run: |
+          URL="${{ steps.app-status.outputs.url }}"
+          if [ -z "$URL" ]; then echo "No URL captured, skipping."; exit 0; fi
+          printf '{"schemaVersion":1,"label":"CIDR Calculator","message":"live","color":"brightgreen","isError":false}\n' \
+            > .github/cidr-calculator-url.json
+          sed -i "/cidr-calculator-url\.json/ s|(https://[a-z0-9-]*\.fwf\.app)|($URL)|g" README.md
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/cidr-calculator-url.json README.md
+          git diff --staged --quiet || git commit -m "chore: update cidr-calculator app URL [skip ci]"
+          git push

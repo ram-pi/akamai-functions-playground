@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIDR Calculator — RFC 1918</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='14' fill='%2300c2ff'/><text x='50' y='68' font-family='Arial,sans-serif' font-size='54' font-weight='bold' text-anchor='middle' fill='white'>⧖</text></svg>">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  /* ══════════════════════════════════════════
+     THEME TOKENS
+     Default = light; media query adds dark.
+     data-theme attr overrides both.
+  ══════════════════════════════════════════ */
+  :root {
+    --bg:        #f4f6fb;
+    --surface:   #ffffff;
+    --border:    #dde3f0;
+    --text:      #1a1a2e;
+    --muted:     #6b7a99;
+    --grid-line: rgba(0,120,200,0.05);
+    --blob:      rgba(200,0,160,0.06);
+
+    --cyan:      #007ab8;
+    --cyan-dim:  #005c8a;
+    --magenta:   #c4008e;
+    --magenta-d: #8a0064;
+    --green:     #007a40;
+    --green-d:   #005c2e;
+    --yellow:    #907000;
+    --yellow-d:  #705500;
+    --orange:    #b84400;
+    --orange-d:  #8a3300;
+    --violet:    #6a2eb8;
+    --violet-d:  #4e228a;
+    --error:     #cc2222;
+
+    /* card top-bar gradients */
+    --grad-a: linear-gradient(90deg,#007ab8,#6a2eb8);
+    --grad-b: linear-gradient(90deg,#c4008e,#b84400);
+    --grad-c: linear-gradient(90deg,#007a40,#907000);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #08080f;
+      --surface:   #0f0f1a;
+      --border:    #1a1a2e;
+      --text:      #e8eaf6;
+      --muted:     #546e8a;
+      --grid-line: rgba(0,194,255,0.03);
+      --blob:      rgba(255,0,200,0.07);
+
+      --cyan:      #00c2ff;
+      --cyan-dim:  #0099cc;
+      --magenta:   #ff00c8;
+      --magenta-d: #cc0099;
+      --green:     #00ff88;
+      --green-d:   #00cc66;
+      --yellow:    #ffe600;
+      --yellow-d:  #ccb800;
+      --orange:    #ff6b00;
+      --orange-d:  #cc5500;
+      --violet:    #b66dff;
+      --violet-d:  #8844cc;
+      --error:     #ff4444;
+
+      --grad-a: linear-gradient(90deg,#00c2ff,#b66dff);
+      --grad-b: linear-gradient(90deg,#ff00c8,#ff6b00);
+      --grad-c: linear-gradient(90deg,#00ff88,#ffe600);
+    }
+  }
+
+  [data-theme="dark"] {
+    --bg:        #08080f;
+    --surface:   #0f0f1a;
+    --border:    #1a1a2e;
+    --text:      #e8eaf6;
+    --muted:     #546e8a;
+    --grid-line: rgba(0,194,255,0.03);
+    --blob:      rgba(255,0,200,0.07);
+
+    --cyan:      #00c2ff;
+    --cyan-dim:  #0099cc;
+    --magenta:   #ff00c8;
+    --magenta-d: #cc0099;
+    --green:     #00ff88;
+    --green-d:   #00cc66;
+    --yellow:    #ffe600;
+    --yellow-d:  #ccb800;
+    --orange:    #ff6b00;
+    --orange-d:  #cc5500;
+    --violet:    #b66dff;
+    --violet-d:  #8844cc;
+    --error:     #ff4444;
+
+    --grad-a: linear-gradient(90deg,#00c2ff,#b66dff);
+    --grad-b: linear-gradient(90deg,#ff00c8,#ff6b00);
+    --grad-c: linear-gradient(90deg,#00ff88,#ffe600);
+  }
+
+  [data-theme="light"] {
+    --bg:        #f4f6fb;
+    --surface:   #ffffff;
+    --border:    #dde3f0;
+    --text:      #1a1a2e;
+    --muted:     #6b7a99;
+    --grid-line: rgba(0,120,200,0.05);
+    --blob:      rgba(200,0,160,0.06);
+
+    --cyan:      #007ab8;
+    --cyan-dim:  #005c8a;
+    --magenta:   #c4008e;
+    --magenta-d: #8a0064;
+    --green:     #007a40;
+    --green-d:   #005c2e;
+    --yellow:    #907000;
+    --yellow-d:  #705500;
+    --orange:    #b84400;
+    --orange-d:  #8a3300;
+    --violet:    #6a2eb8;
+    --violet-d:  #4e228a;
+    --error:     #cc2222;
+
+    --grad-a: linear-gradient(90deg,#007ab8,#6a2eb8);
+    --grad-b: linear-gradient(90deg,#c4008e,#b84400);
+    --grad-c: linear-gradient(90deg,#007a40,#907000);
+  }
+
+  /* ══════════════════════════════════════════
+     BASE
+  ══════════════════════════════════════════ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 800px; height: 400px;
+    background: radial-gradient(ellipse, var(--blob) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ══════════════════════════════════════════
+     THEME TOGGLE
+  ══════════════════════════════════════════ */
+  .theme-toggle {
+    position: fixed;
+    top: 16px; right: 16px;
+    z-index: 100;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+  }
+
+  .theme-toggle .toggle-icon { font-size: 14px; }
+  .theme-toggle .toggle-label { letter-spacing: 1px; }
+
+  /* ══════════════════════════════════════════
+     HEADER
+  ══════════════════════════════════════════ */
+  header {
+    text-align: center;
+    padding: 56px 24px 36px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 700px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), transparent);
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 4px 16px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    background: rgba(0,194,255,0.08);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    animation: pulse-badge 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-badge {
+    0%,100% { box-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 30%, transparent); }
+    50%      { box-shadow: 0 0 20px color-mix(in srgb, var(--cyan) 60%, transparent); }
+  }
+
+  h1 {
+    font-size: clamp(30px, 5vw, 54px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--magenta) 50%, var(--yellow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1px;
+  }
+
+  /* ══════════════════════════════════════════
+     LAYOUT
+  ══════════════════════════════════════════ */
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* ══════════════════════════════════════════
+     RFC RANGE CARDS
+  ══════════════════════════════════════════ */
+  .ranges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .range-card {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 20px 24px;
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .range-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+  }
+
+  .range-card:hover { transform: translateY(-3px); }
+
+  .range-a::before { background: var(--grad-a); }
+  .range-b::before { background: var(--grad-b); }
+  .range-c::before { background: var(--grad-c); }
+
+  .range-a:hover { border-color: var(--cyan-dim); box-shadow: 0 4px 24px color-mix(in srgb, var(--cyan) 15%, transparent); }
+  .range-b:hover { border-color: var(--magenta-d); box-shadow: 0 4px 24px color-mix(in srgb, var(--magenta) 15%, transparent); }
+  .range-c:hover { border-color: var(--green-d); box-shadow: 0 4px 24px color-mix(in srgb, var(--green) 15%, transparent); }
+
+  .range-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .range-cidr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .range-a .range-cidr { color: var(--cyan); }
+  .range-b .range-cidr { color: var(--magenta); }
+  .range-c .range-cidr { color: var(--green); }
+
+  .range-prefix-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+
+  .range-a .range-prefix-badge { background: color-mix(in srgb, var(--cyan) 12%, transparent); color: var(--cyan); border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent); }
+  .range-b .range-prefix-badge { background: color-mix(in srgb, var(--magenta) 12%, transparent); color: var(--magenta); border: 1px solid color-mix(in srgb, var(--magenta) 30%, transparent); }
+  .range-c .range-prefix-badge { background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 30%, transparent); }
+
+  .range-rows { display: flex; flex-direction: column; gap: 7px; }
+
+  .range-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  .range-row-label { color: var(--muted); }
+  .range-row-value { color: var(--text); font-weight: 700; }
+
+  .range-a .range-row-value.accent { color: var(--cyan); font-size: 13px; }
+  .range-b .range-row-value.accent { color: var(--magenta); font-size: 13px; }
+  .range-c .range-row-value.accent { color: var(--green); font-size: 13px; }
+
+  /* ══════════════════════════════════════════
+     TOOL PANELS
+  ══════════════════════════════════════════ */
+  .tool-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .tool-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+  }
+
+  .panel-ip-lookup::before  { background: var(--grad-a); }
+  .panel-splitter::before   { background: var(--grad-b); }
+
+  .panel-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-ip-lookup .panel-title { color: var(--cyan); }
+  .panel-splitter .panel-title  { color: var(--magenta); }
+
+  .panel-desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 22px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ══════════════════════════════════════════
+     INPUTS
+  ══════════════════════════════════════════ */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .input-group label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .input-group input,
+  .input-group select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.25s, box-shadow 0.25s, background 0.3s;
+    width: 100%;
+  }
+
+  .input-group input:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px color-mix(in srgb, var(--cyan) 15%, transparent); }
+  .input-group.splitter-input input:focus,
+  .input-group.splitter-input select:focus { border-color: var(--magenta); box-shadow: 0 0 0 2px color-mix(in srgb, var(--magenta) 15%, transparent); }
+
+  .input-group input::placeholder { color: var(--muted); }
+  .input-group select option { background: var(--surface); color: var(--text); }
+
+  .btn {
+    align-self: flex-end;
+    padding: 11px 24px;
+    border-radius: 6px;
+    border: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .btn-cyan    { background: var(--grad-a); color: #fff; }
+  .btn-magenta { background: var(--grad-b); color: #fff; }
+
+  .btn-cyan:hover    { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 4px 20px color-mix(in srgb, var(--cyan) 35%, transparent); }
+  .btn-magenta:hover { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 4px 20px color-mix(in srgb, var(--magenta) 35%, transparent); }
+
+  /* ══════════════════════════════════════════
+     RESULTS
+  ══════════════════════════════════════════ */
+  .result-area { display: none; animation: fade-in 0.3s ease; }
+  .result-area.visible { display: block; }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-error {
+    background: color-mix(in srgb, var(--error) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+    border-radius: 8px;
+    padding: 14px 16px;
+    color: var(--error);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ip-result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .ip-result-card {
+    background: color-mix(in srgb, var(--border) 30%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    transition: border-color 0.3s, background 0.3s;
+  }
+
+  .ip-result-card.hl-cyan  { border-color: color-mix(in srgb, var(--cyan) 40%, transparent); background: color-mix(in srgb, var(--cyan) 6%, transparent); }
+  .ip-result-card.hl-mag   { border-color: color-mix(in srgb, var(--magenta) 40%, transparent); background: color-mix(in srgb, var(--magenta) 6%, transparent); }
+  .ip-result-card.hl-green { border-color: color-mix(in srgb, var(--green) 40%, transparent); background: color-mix(in srgb, var(--green) 6%, transparent); }
+
+  .ip-result-card .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  .ip-result-card .card-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .ip-result-card.hl-cyan  .card-value { color: var(--cyan); }
+  .ip-result-card.hl-mag   .card-value { color: var(--magenta); }
+  .ip-result-card.hl-green .card-value { color: var(--green); }
+
+  .private-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .private-banner.is-private {
+    background: color-mix(in srgb, var(--green) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+    color: var(--green);
+  }
+
+  .private-banner.is-public {
+    background: color-mix(in srgb, var(--orange) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--orange) 30%, transparent);
+    color: var(--orange);
+  }
+
+  /* Bit display */
+  .bit-display {
+    background: color-mix(in srgb, var(--border) 20%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    margin-bottom: 12px;
+  }
+
+  .bit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: nowrap;
+  }
+  .bit-row:last-child { margin-bottom: 0; }
+
+  .bit-label {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 1px;
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+
+  .bit-octets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .bit-octet  { display: flex; gap: 1px; }
+
+  .bit {
+    width: 10px; height: 18px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .bit.net  { background: color-mix(in srgb, var(--cyan) 25%, transparent); color: var(--cyan); border: 1px solid color-mix(in srgb, var(--cyan) 40%, transparent); }
+  .bit.host { background: color-mix(in srgb, var(--magenta) 15%, transparent); color: var(--magenta); border: 1px solid color-mix(in srgb, var(--magenta) 25%, transparent); }
+  .bit.one  { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); }
+  .bit.zero { background: color-mix(in srgb, var(--border) 50%, transparent); color: var(--muted); }
+
+  .bit-legend {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* Subnet splitter */
+  .split-summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .split-stat {
+    background: color-mix(in srgb, var(--border) 30%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-width: 140px;
+    flex: 1;
+    transition: background 0.3s;
+  }
+
+  .split-stat .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .split-stat .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--yellow);
+  }
+
+  .split-stat .stat-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .subnet-table-wrap {
+    max-height: 360px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--magenta-d) transparent;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  thead th {
+    position: sticky; top: 0;
+    background: var(--surface);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    z-index: 2;
+  }
+
+  tbody tr { border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); transition: background 0.15s; }
+  tbody tr:hover { background: color-mix(in srgb, var(--magenta) 5%, transparent); }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td { padding: 8px 14px; color: var(--text); vertical-align: middle; }
+  tbody td.td-network { color: var(--magenta); font-weight: 700; }
+  tbody td.td-first   { color: var(--cyan); }
+  tbody td.td-last    { color: var(--violet); }
+  tbody td.td-bcast   { color: var(--orange); }
+  tbody td.td-count   { color: var(--green); text-align: right; }
+  tbody td.td-idx     { color: var(--muted); font-size: 10px; }
+
+  .truncation-note {
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  /* ══════════════════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════════════════ */
+  @media (max-width: 600px) {
+    .ranges-grid { grid-template-columns: 1fr; }
+    .input-row { flex-direction: column; }
+    .btn { align-self: stretch; }
+    .bit { width: 8px; font-size: 7px; }
+    .theme-toggle .toggle-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Theme toggle -->
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle dark/light mode">
+  <span class="toggle-icon" id="themeIcon">🌙</span>
+  <span class="toggle-label" id="themeLabel">dark</span>
+</button>
+
+<header>
+  <div class="badge">RFC 1918 · IPv4 · Private Networks</div>
+  <h1>CIDR Calculator</h1>
+  <p class="subtitle">// private ranges · ip inspector · subnet splitter</p>
+</header>
+
+<div class="main">
+
+  <div class="section-label">01 — rfc 1918 private address ranges</div>
+  <div class="ranges-grid" id="rangesGrid"></div>
+
+  <div class="section-label">02 — ip address inspector</div>
+  <div class="tool-panel panel-ip-lookup">
+    <div class="panel-title">🔍 IP / CIDR Inspector</div>
+    <div class="panel-desc">enter an IPv4 address or CIDR notation (e.g. 10.1.2.3 or 192.168.1.0/24)</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>IP address or CIDR</label>
+        <input type="text" id="ipInput" placeholder="10.0.0.0/8" autocomplete="off" spellcheck="false">
+      </div>
+      <button class="btn btn-cyan" onclick="runIpLookup()">Inspect</button>
+    </div>
+    <div class="result-area" id="ipResult"></div>
+  </div>
+
+  <div class="section-label">03 — subnet splitter</div>
+  <div class="tool-panel panel-splitter">
+    <div class="panel-title">✂️ Subnet Splitter</div>
+    <div class="panel-desc">split a larger subnet into equal smaller subnets and enumerate them</div>
+    <div class="input-row">
+      <div class="input-group splitter-input">
+        <label>Source CIDR</label>
+        <input type="text" id="splitInput" placeholder="10.0.0.0/8" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="input-group splitter-input">
+        <label>Split into /<span id="splitPrefixLabel">16</span> subnets</label>
+        <input type="range" id="splitPrefix" min="1" max="32" value="16"
+               oninput="document.getElementById('splitPrefixLabel').textContent = this.value"
+               style="margin-top:8px; accent-color: var(--magenta);">
+      </div>
+      <button class="btn btn-magenta" onclick="runSplitter()">Split</button>
+    </div>
+    <div class="result-area" id="splitResult"></div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  THEME
+// ═══════════════════════════════════════════════
+const STORAGE_KEY = 'cidr-theme';
+
+function getSystemTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const icon  = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  if (theme === 'dark') { icon.textContent = '☀️'; label.textContent = 'light'; }
+  else                  { icon.textContent = '🌙'; label.textContent = 'dark'; }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || getSystemTheme();
+  const next    = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(STORAGE_KEY, next);
+  applyTheme(next);
+}
+
+// Init: honour saved preference, else let CSS media query handle it but sync button
+(function () {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    applyTheme(saved);
+  } else {
+    // No saved pref — CSS will use media query; just sync the button icon
+    const sys = getSystemTheme();
+    const icon  = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
+    if (sys === 'dark') { icon.textContent = '☀️'; label.textContent = 'light'; }
+    else                { icon.textContent = '🌙'; label.textContent = 'dark'; }
+    // listen for OS-level changes to keep button in sync
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (!localStorage.getItem(STORAGE_KEY)) {
+        const theme = e.matches ? 'dark' : 'light';
+        if (theme === 'dark') { icon.textContent = '☀️'; label.textContent = 'light'; }
+        else                  { icon.textContent = '🌙'; label.textContent = 'dark'; }
+      }
+    });
+  }
+})();
+
+// ═══════════════════════════════════════════════
+//  CIDR MATH
+// ═══════════════════════════════════════════════
+function ipToInt(ip) {
+  const parts = ip.trim().split('.');
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const p of parts) {
+    const b = parseInt(p, 10);
+    if (isNaN(b) || b < 0 || b > 255) return null;
+    n = (n << 8) | b;
+  }
+  return n >>> 0;
+}
+
+function intToIp(n) {
+  n = n >>> 0;
+  return [(n >>> 24) & 0xff, (n >>> 16) & 0xff, (n >>> 8) & 0xff, n & 0xff].join('.');
+}
+
+function prefixToMask(prefix) {
+  return prefix === 0 ? 0 : ((0xffffffff << (32 - prefix)) >>> 0);
+}
+
+function parseCidr(input) {
+  input = input.trim();
+  let ip, prefix;
+  if (input.includes('/')) {
+    const [a, b] = input.split('/');
+    ip = ipToInt(a);
+    prefix = parseInt(b, 10);
+  } else {
+    ip = ipToInt(input);
+    prefix = 32;
+  }
+  if (ip === null || isNaN(prefix) || prefix < 0 || prefix > 32) return null;
+  return { ip, prefix };
+}
+
+function cidrInfo(ip, prefix) {
+  const mask      = prefixToMask(prefix);
+  const network   = (ip & mask) >>> 0;
+  const bcast     = (network | (~mask >>> 0)) >>> 0;
+  const total     = Math.pow(2, 32 - prefix);
+  const usable    = prefix >= 31 ? total : Math.max(0, total - 2);
+  const firstHost = prefix >= 31 ? network : (network + 1) >>> 0;
+  const lastHost  = prefix >= 31 ? bcast   : (bcast  - 1) >>> 0;
+  return { network, bcast, mask, total, usable, firstHost, lastHost, prefix };
+}
+
+function toBin32(n) {
+  return (n >>> 0).toString(2).padStart(32, '0');
+}
+
+function fmt(n) { return n.toLocaleString(); }
+
+// ═══════════════════════════════════════════════
+//  RFC 1918 RANGE CARDS
+// ═══════════════════════════════════════════════
+const RFC1918 = [
+  { cidr: '10.0.0.0/8',     prefix: 8,  cls: 'range-a', label: 'Class A' },
+  { cidr: '172.16.0.0/12',  prefix: 12, cls: 'range-b', label: 'Class B' },
+  { cidr: '192.168.0.0/16', prefix: 16, cls: 'range-c', label: 'Class C' },
+];
+
+function buildRangesGrid() {
+  document.getElementById('rangesGrid').innerHTML = RFC1918.map(r => {
+    const p    = parseCidr(r.cidr);
+    const info = cidrInfo(p.ip, p.prefix);
+    return `
+    <div class="range-card ${r.cls}">
+      <div class="range-header">
+        <div class="range-cidr">${r.cidr}</div>
+        <div class="range-prefix-badge">${r.label}</div>
+      </div>
+      <div class="range-rows">
+        <div class="range-row"><span class="range-row-label">Network</span><span class="range-row-value">${intToIp(info.network)}</span></div>
+        <div class="range-row"><span class="range-row-label">Subnet Mask</span><span class="range-row-value">${intToIp(info.mask)}</span></div>
+        <div class="range-row"><span class="range-row-label">First Host</span><span class="range-row-value">${intToIp(info.firstHost)}</span></div>
+        <div class="range-row"><span class="range-row-label">Last Host</span><span class="range-row-value">${intToIp(info.lastHost)}</span></div>
+        <div class="range-row"><span class="range-row-label">Broadcast</span><span class="range-row-value">${intToIp(info.bcast)}</span></div>
+        <div class="range-row"><span class="range-row-label">Total IPs</span><span class="range-row-value accent">${fmt(info.total)}</span></div>
+        <div class="range-row"><span class="range-row-label">Usable Hosts</span><span class="range-row-value accent">${fmt(info.usable)}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  IP LOOKUP
+// ═══════════════════════════════════════════════
+function isPrivate(ipInt) {
+  for (const r of RFC1918) {
+    const p    = parseCidr(r.cidr);
+    const mask = prefixToMask(p.prefix);
+    if ((ipInt & mask) >>> 0 === (p.ip & mask) >>> 0) return r;
+  }
+  return null;
+}
+
+function buildBitDisplay(ip, prefix) {
+  const ipBits = toBin32(ip);
+  const mkBits = toBin32(prefixToMask(prefix));
+
+  function render(bits, colorFn) {
+    return '<div class="bit-octets">' + [0,1,2,3].map(o =>
+      '<div class="bit-octet">' + [0,1,2,3,4,5,6,7].map(b => {
+        const i   = o * 8 + b;
+        const cls = colorFn(i, bits[i]);
+        return `<div class="bit ${cls}">${bits[i]}</div>`;
+      }).join('') + '</div>'
+    ).join('') + '</div>';
+  }
+
+  const ipHtml   = render(ipBits,  (i, v) => (i < prefix ? 'net ' : 'host ') + (v === '1' ? 'one' : 'zero'));
+  const maskHtml = render(mkBits,  (i, v) => v === '1' ? 'net one' : 'host zero');
+
+  return `
+    <div class="bit-display">
+      <div class="bit-row"><span class="bit-label">IP Address</span>${ipHtml}</div>
+      <div class="bit-row"><span class="bit-label">Subnet Mask</span>${maskHtml}</div>
+    </div>
+    <div class="bit-legend">
+      <span style="color:var(--cyan)">■</span> network bits (/${prefix}) &nbsp;
+      <span style="color:var(--magenta)">■</span> host bits &nbsp;
+      <span style="color:var(--green)">■</span> bit=1 &nbsp;
+      <span style="color:var(--muted)">■</span> bit=0
+    </div>`;
+}
+
+function runIpLookup() {
+  const el = document.getElementById('ipResult');
+  el.innerHTML = ''; el.className = 'result-area';
+
+  const parsed = parseCidr(document.getElementById('ipInput').value);
+  if (!parsed) {
+    el.innerHTML = `<div class="result-error">⚠ Invalid input. Try 10.1.2.3 or 192.168.1.0/24</div>`;
+    el.classList.add('visible'); return;
+  }
+
+  const { ip, prefix } = parsed;
+  const info = cidrInfo(ip, prefix);
+  const priv = isPrivate(ip);
+
+  const hlCls = priv
+    ? (priv.cls === 'range-a' ? 'hl-cyan' : priv.cls === 'range-b' ? 'hl-mag' : 'hl-green')
+    : '';
+
+  const banner = priv
+    ? `<div class="private-banner is-private">✓ Private — falls within RFC 1918 range <strong>${priv.cidr}</strong> (${priv.label})</div>`
+    : `<div class="private-banner is-public">⚡ Public address — not in any RFC 1918 private range</div>`;
+
+  const cards = [
+    { label: 'IP Address',      value: intToIp(ip),              cls: hlCls },
+    { label: 'Network Address', value: intToIp(info.network),    cls: hlCls },
+    { label: 'Subnet Mask',     value: intToIp(info.mask),       cls: '' },
+    { label: 'Broadcast',       value: intToIp(info.bcast),      cls: '' },
+    { label: 'First Host',      value: intToIp(info.firstHost),  cls: '' },
+    { label: 'Last Host',       value: intToIp(info.lastHost),   cls: '' },
+    { label: 'Total IPs',       value: fmt(info.total),          cls: hlCls },
+    { label: 'Usable Hosts',    value: fmt(info.usable),         cls: hlCls },
+    { label: 'Prefix',          value: `/${prefix}`,             cls: '' },
+    { label: 'Wildcard',        value: intToIp(~info.mask >>> 0), cls: '' },
+  ];
+
+  const grid = `<div class="ip-result-grid">${cards.map(c =>
+    `<div class="ip-result-card ${c.cls}">
+      <div class="card-label">${c.label}</div>
+      <div class="card-value">${c.value}</div>
+    </div>`).join('')}</div>`;
+
+  el.innerHTML = banner + grid + buildBitDisplay(ip, prefix);
+  el.classList.add('visible');
+}
+
+// ═══════════════════════════════════════════════
+//  SUBNET SPLITTER
+// ═══════════════════════════════════════════════
+const MAX_ROWS = 256;
+
+function runSplitter() {
+  const el = document.getElementById('splitResult');
+  el.innerHTML = ''; el.className = 'result-area';
+
+  const parsed    = parseCidr(document.getElementById('splitInput').value);
+  const newPrefix = parseInt(document.getElementById('splitPrefix').value, 10);
+
+  if (!parsed) {
+    el.innerHTML = `<div class="result-error">⚠ Invalid CIDR. Try 10.0.0.0/8</div>`;
+    el.classList.add('visible'); return;
+  }
+
+  const { ip, prefix } = parsed;
+  if (newPrefix <= prefix) {
+    el.innerHTML = `<div class="result-error">⚠ Target prefix /${newPrefix} must be larger (more specific) than source /${prefix}</div>`;
+    el.classList.add('visible'); return;
+  }
+
+  const info         = cidrInfo(ip, prefix);
+  const delta        = newPrefix - prefix;
+  const subnetCount  = Math.pow(2, delta);
+  const hostsPerSub  = Math.pow(2, 32 - newPrefix);
+  const usablePerSub = newPrefix >= 31 ? hostsPerSub : Math.max(0, hostsPerSub - 2);
+  const display      = Math.min(subnetCount, MAX_ROWS);
+
+  const summary = `
+    <div class="split-summary">
+      <div class="split-stat">
+        <div class="stat-label">Source Network</div>
+        <div class="stat-value" style="font-size:15px;color:var(--cyan)">${intToIp(info.network)}/${prefix}</div>
+      </div>
+      <div class="split-stat">
+        <div class="stat-label">Subnet Count</div>
+        <div class="stat-value">${fmt(subnetCount)}</div>
+        <div class="stat-sub">/${newPrefix} subnets</div>
+      </div>
+      <div class="split-stat">
+        <div class="stat-label">IPs / Subnet</div>
+        <div class="stat-value">${fmt(hostsPerSub)}</div>
+        <div class="stat-sub">${fmt(usablePerSub)} usable hosts</div>
+      </div>
+      <div class="split-stat">
+        <div class="stat-label">Prefix Change</div>
+        <div class="stat-value" style="color:var(--violet)">+${delta}</div>
+        <div class="stat-sub">/${prefix} → /${newPrefix}</div>
+      </div>
+    </div>`;
+
+  let rows = '';
+  for (let i = 0; i < display; i++) {
+    const netAddr = (info.network + i * hostsPerSub) >>> 0;
+    const bcast   = (netAddr + hostsPerSub - 1) >>> 0;
+    const first   = newPrefix >= 31 ? netAddr : (netAddr + 1) >>> 0;
+    const last    = newPrefix >= 31 ? bcast   : (bcast  - 1) >>> 0;
+    rows += `<tr>
+      <td class="td-idx">${i + 1}</td>
+      <td class="td-network">${intToIp(netAddr)}/${newPrefix}</td>
+      <td class="td-first">${intToIp(first)}</td>
+      <td class="td-last">${intToIp(last)}</td>
+      <td class="td-bcast">${intToIp(bcast)}</td>
+      <td class="td-count">${fmt(usablePerSub)}</td>
+    </tr>`;
+  }
+
+  const trunc = subnetCount > MAX_ROWS
+    ? `<div class="truncation-note">showing first ${MAX_ROWS} of ${fmt(subnetCount)} subnets</div>`
+    : '';
+
+  el.innerHTML = summary + `
+    <div class="subnet-table-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Network</th><th>First Host</th>
+          <th>Last Host</th><th>Broadcast</th>
+          <th style="text-align:right">Usable Hosts</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${trunc}
+    </div>`;
+  el.classList.add('visible');
+}
+
+// ─── keyboard shortcuts ───
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (document.activeElement.id === 'ipInput')    runIpLookup();
+    if (document.activeElement.id === 'splitInput') runSplitter();
+  }
+});
+
+buildRangesGrid();
+</script>
+</body>
+</html>
