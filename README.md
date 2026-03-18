@@ -2,7 +2,7 @@
 
 [![EMEA/APJ Clock](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fram-pi%2Fakamai-functions-playground%2Fmain%2F.github%2Ftime-teller-url.json&style=flat-square)](https://1792b14e-3717-462b-ba53-781bd689159a.fwf.app)
 [![Wasm Explained](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fram-pi%2Fakamai-functions-playground%2Fmain%2F.github%2Fwasm-explained-url.json&style=flat-square)](https://58372415-f6e8-4cf3-9078-48c93c56d7aa.fwf.app)
-[![CIDR Calculator](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fram-pi%2Fakamai-functions-playground%2Fmain%2F.github%2Fcidr-calculator-url.json&style=flat-square)](https://placeholder.fwf.app)
+[![CIDR Calculator](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fram-pi%2Fakamai-functions-playground%2Fmain%2F.github%2Fcidr-calculator-url.json&style=flat-square)](https://96864b75-3e5d-4d13-8b6b-7ab5873badc9.fwf.app)
 
 
 A collection of templates and examples for building WebAssembly functions with [Fermyon Spin](https://developer.fermyon.com/spin).
