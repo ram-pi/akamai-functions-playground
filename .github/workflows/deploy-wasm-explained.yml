@@ -56,9 +56,19 @@ jobs:
 
       - name: Get app URL
         id: app-status
+        continue-on-error: true
         run: |
-          URL=$(spin aka app status --app-name wasm-explained-static-content | grep -oP 'https://\S+\.fwf\.app')
-          echo "url=$URL" >> $GITHUB_OUTPUT
+          for i in 1 2 3 4 5; do
+            URL=$(spin aka app status --app-name wasm-explained-static-content 2>/dev/null | grep -oP 'https://\S+\.fwf\.app' || true)
+            if [ -n "$URL" ]; then
+              echo "url=$URL" >> $GITHUB_OUTPUT
+              echo "Captured URL: $URL"
+              exit 0
+            fi
+            echo "Attempt $i: URL not ready yet, retrying in 10s..."
+            sleep 10
+          done
+          echo "Could not capture URL after 5 attempts, continuing without it."
 
       - name: Persist deployed URL
         run: |
