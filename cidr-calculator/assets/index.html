@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CIDR Calculator — RFC 1918</title>
+<title>CIDR Calculator — RFC 1918 & RFC 6598</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='14' fill='%2300c2ff'/><text x='50' y='68' font-family='Arial,sans-serif' font-size='54' font-weight='bold' text-anchor='middle' fill='white'>⧖</text></svg>">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
@@ -40,6 +40,7 @@
     --grad-a: linear-gradient(90deg,#007ab8,#6a2eb8);
     --grad-b: linear-gradient(90deg,#c4008e,#b84400);
     --grad-c: linear-gradient(90deg,#007a40,#907000);
+    --grad-d: linear-gradient(90deg,#c47000,#8a4400);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -69,6 +70,7 @@
       --grad-a: linear-gradient(90deg,#00c2ff,#b66dff);
       --grad-b: linear-gradient(90deg,#ff00c8,#ff6b00);
       --grad-c: linear-gradient(90deg,#00ff88,#ffe600);
+      --grad-d: linear-gradient(90deg,#ffaa00,#ff6b00);
     }
   }
 
@@ -98,6 +100,7 @@
     --grad-a: linear-gradient(90deg,#00c2ff,#b66dff);
     --grad-b: linear-gradient(90deg,#ff00c8,#ff6b00);
     --grad-c: linear-gradient(90deg,#00ff88,#ffe600);
+    --grad-d: linear-gradient(90deg,#ffaa00,#ff6b00);
   }
 
   [data-theme="light"] {
@@ -126,6 +129,7 @@
     --grad-a: linear-gradient(90deg,#007ab8,#6a2eb8);
     --grad-b: linear-gradient(90deg,#c4008e,#b84400);
     --grad-c: linear-gradient(90deg,#007a40,#907000);
+    --grad-d: linear-gradient(90deg,#c47000,#8a4400);
   }
 
   /* ══════════════════════════════════════════
@@ -285,12 +289,6 @@
   /* ══════════════════════════════════════════
      RFC RANGE CARDS
   ══════════════════════════════════════════ */
-  .ranges-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
-    margin-bottom: 48px;
-  }
 
   .range-card {
     background: var(--surface);
@@ -314,10 +312,12 @@
   .range-a::before { background: var(--grad-a); }
   .range-b::before { background: var(--grad-b); }
   .range-c::before { background: var(--grad-c); }
+  .range-d::before { background: var(--grad-d); }
 
   .range-a:hover { border-color: var(--cyan-dim); box-shadow: 0 4px 24px color-mix(in srgb, var(--cyan) 15%, transparent); }
   .range-b:hover { border-color: var(--magenta-d); box-shadow: 0 4px 24px color-mix(in srgb, var(--magenta) 15%, transparent); }
   .range-c:hover { border-color: var(--green-d); box-shadow: 0 4px 24px color-mix(in srgb, var(--green) 15%, transparent); }
+  .range-d:hover { border-color: var(--orange-d); box-shadow: 0 4px 24px color-mix(in srgb, var(--orange) 15%, transparent); }
 
   .range-header {
     display: flex;
@@ -335,6 +335,7 @@
   .range-a .range-cidr { color: var(--cyan); }
   .range-b .range-cidr { color: var(--magenta); }
   .range-c .range-cidr { color: var(--green); }
+  .range-d .range-cidr { color: var(--orange); }
 
   .range-prefix-badge {
     font-family: 'JetBrains Mono', monospace;
@@ -347,6 +348,7 @@
   .range-a .range-prefix-badge { background: color-mix(in srgb, var(--cyan) 12%, transparent); color: var(--cyan); border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent); }
   .range-b .range-prefix-badge { background: color-mix(in srgb, var(--magenta) 12%, transparent); color: var(--magenta); border: 1px solid color-mix(in srgb, var(--magenta) 30%, transparent); }
   .range-c .range-prefix-badge { background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 30%, transparent); }
+  .range-d .range-prefix-badge { background: color-mix(in srgb, var(--orange) 12%, transparent); color: var(--orange); border: 1px solid color-mix(in srgb, var(--orange) 30%, transparent); }
 
   .range-rows { display: flex; flex-direction: column; gap: 7px; }
 
@@ -364,6 +366,7 @@
   .range-a .range-row-value.accent { color: var(--cyan); font-size: 13px; }
   .range-b .range-row-value.accent { color: var(--magenta); font-size: 13px; }
   .range-c .range-row-value.accent { color: var(--green); font-size: 13px; }
+  .range-d .range-row-value.accent { color: var(--orange); font-size: 13px; }
 
   /* ══════════════════════════════════════════
      TOOL PANELS
@@ -513,9 +516,10 @@
     transition: border-color 0.3s, background 0.3s;
   }
 
-  .ip-result-card.hl-cyan  { border-color: color-mix(in srgb, var(--cyan) 40%, transparent); background: color-mix(in srgb, var(--cyan) 6%, transparent); }
-  .ip-result-card.hl-mag   { border-color: color-mix(in srgb, var(--magenta) 40%, transparent); background: color-mix(in srgb, var(--magenta) 6%, transparent); }
-  .ip-result-card.hl-green { border-color: color-mix(in srgb, var(--green) 40%, transparent); background: color-mix(in srgb, var(--green) 6%, transparent); }
+  .ip-result-card.hl-cyan   { border-color: color-mix(in srgb, var(--cyan) 40%, transparent); background: color-mix(in srgb, var(--cyan) 6%, transparent); }
+  .ip-result-card.hl-mag    { border-color: color-mix(in srgb, var(--magenta) 40%, transparent); background: color-mix(in srgb, var(--magenta) 6%, transparent); }
+  .ip-result-card.hl-green  { border-color: color-mix(in srgb, var(--green) 40%, transparent); background: color-mix(in srgb, var(--green) 6%, transparent); }
+  .ip-result-card.hl-orange { border-color: color-mix(in srgb, var(--orange) 40%, transparent); background: color-mix(in srgb, var(--orange) 6%, transparent); }
 
   .ip-result-card .card-label {
     font-family: 'JetBrains Mono', monospace;
@@ -533,9 +537,10 @@
     color: var(--text);
   }
 
-  .ip-result-card.hl-cyan  .card-value { color: var(--cyan); }
-  .ip-result-card.hl-mag   .card-value { color: var(--magenta); }
-  .ip-result-card.hl-green .card-value { color: var(--green); }
+  .ip-result-card.hl-cyan   .card-value { color: var(--cyan); }
+  .ip-result-card.hl-mag    .card-value { color: var(--magenta); }
+  .ip-result-card.hl-green  .card-value { color: var(--green); }
+  .ip-result-card.hl-orange .card-value { color: var(--orange); }
 
   .private-banner {
     display: flex;
@@ -554,11 +559,135 @@
     color: var(--green);
   }
 
-  .private-banner.is-public {
+  .private-banner.is-cgnat {
     background: color-mix(in srgb, var(--orange) 8%, transparent);
     border: 1px solid color-mix(in srgb, var(--orange) 30%, transparent);
     color: var(--orange);
   }
+
+  .private-banner.is-public {
+    background: color-mix(in srgb, var(--muted) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+    color: var(--muted);
+  }
+
+  /* ══════════════════════════════════════════
+     RFC 6598 EXPLAINER PANEL
+  ══════════════════════════════════════════ */
+  .rfc6598-box {
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--orange) 25%, transparent);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 40px color-mix(in srgb, var(--orange) 6%, transparent);
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .rfc6598-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: var(--grad-d);
+  }
+
+  .rfc6598-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--orange);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rfc6598-intro {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+
+  .rfc6598-intro strong { color: var(--text); }
+  .rfc6598-intro code   { color: var(--orange); font-size: 12px; }
+
+  .rfc6598-note {
+    background: color-mix(in srgb, var(--orange) 6%, transparent);
+    border-left: 3px solid var(--orange);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+
+  .rfc6598-note strong { color: var(--orange); }
+
+  .users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+
+  .user-card {
+    border-radius: 8px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+  }
+
+  .user-card:hover { transform: translateY(-2px); }
+
+  .user-card-tailscale { background: color-mix(in srgb, #0090ff 6%, transparent); border-color: color-mix(in srgb, #0090ff 25%, transparent); }
+  .user-card-netbird   { background: color-mix(in srgb, var(--violet) 6%, transparent); border-color: color-mix(in srgb, var(--violet) 25%, transparent); }
+  .user-card-isp       { background: color-mix(in srgb, var(--yellow) 6%, transparent); border-color: color-mix(in srgb, var(--yellow) 25%, transparent); }
+
+  .user-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .user-card-icon { font-size: 22px; }
+
+  .user-card-name {
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .user-card-tailscale .user-card-name { color: #3b82f6; }
+  .user-card-netbird   .user-card-name { color: var(--violet); }
+  .user-card-isp       .user-card-name { color: var(--yellow); }
+
+  .user-card-tag {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .user-card-desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  .user-card-desc code { font-size: 11px; }
+  .user-card-tailscale .user-card-desc code { color: #3b82f6; }
+  .user-card-netbird   .user-card-desc code { color: var(--violet); }
+  .user-card-isp       .user-card-desc code { color: var(--yellow); }
 
   /* Bit display */
   .bit-display {
@@ -702,10 +831,136 @@
   }
 
   /* ══════════════════════════════════════════
+     ACCORDION
+  ══════════════════════════════════════════ */
+  .accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 48px;
+  }
+
+  .acc-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    position: relative;
+  }
+
+  .acc-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .acc-block.open::before { opacity: 1; }
+  .acc-block-rfc1918::before { background: var(--grad-a); }
+  .acc-block-rfc6598::before { background: var(--grad-d); }
+
+  .acc-block-rfc1918.open { border-color: color-mix(in srgb, var(--cyan) 30%, transparent); }
+  .acc-block-rfc6598.open { border-color: color-mix(in srgb, var(--orange) 30%, transparent); }
+
+  .acc-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    gap: 14px;
+    color: var(--text);
+    transition: background 0.2s;
+  }
+
+  .acc-header:hover { background: color-mix(in srgb, var(--border) 40%, transparent); }
+
+  .acc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .acc-rfc-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .rfc1918-tag { background: color-mix(in srgb, var(--cyan) 12%, transparent); color: var(--cyan); border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent); }
+  .rfc6598-tag { background: color-mix(in srgb, var(--orange) 12%, transparent); color: var(--orange); border: 1px solid color-mix(in srgb, var(--orange) 30%, transparent); }
+
+  .acc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+
+  .acc-cidrs {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .acc-chevron {
+    font-size: 13px;
+    color: var(--muted);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+
+  .acc-block.open .acc-chevron { transform: rotate(90deg); }
+
+  .acc-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+  }
+
+  .acc-body-inner {
+    padding: 4px 20px 24px;
+  }
+
+  /* Card row inside accordion — all cards in one row */
+  .ranges-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 0;
+  }
+
+  /* RFC 6598 detail (inside accordion body) */
+  .rfc6598-detail {
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+
+  /* ══════════════════════════════════════════
      RESPONSIVE
   ══════════════════════════════════════════ */
   @media (max-width: 600px) {
-    .ranges-grid { grid-template-columns: 1fr; }
+    .ranges-row { grid-template-columns: 1fr; }
+    .acc-cidrs { display: none; }
     .input-row { flex-direction: column; }
     .btn { align-self: stretch; }
     .bit { width: 8px; font-size: 7px; }
@@ -722,15 +977,91 @@
 </button>
 
 <header>
-  <div class="badge">RFC 1918 · IPv4 · Private Networks</div>
+  <div class="badge">RFC 1918 · RFC 6598 · IPv4 · Private Networks</div>
   <h1>CIDR Calculator</h1>
-  <p class="subtitle">// private ranges · ip inspector · subnet splitter</p>
+  <p class="subtitle">// private ranges · shared address space · ip inspector · subnet splitter</p>
 </header>
 
 <div class="main">
 
-  <div class="section-label">01 — rfc 1918 private address ranges</div>
-  <div class="ranges-grid" id="rangesGrid"></div>
+  <div class="section-label">01 — reserved address ranges</div>
+  <div class="accordion">
+
+    <!-- RFC 1918 block -->
+    <div class="acc-block acc-block-rfc1918" id="acc-rfc1918">
+      <button class="acc-header" onclick="toggleAcc('acc-rfc1918')" aria-expanded="false">
+        <div class="acc-header-left">
+          <span class="acc-rfc-tag rfc1918-tag">RFC 1918</span>
+          <span class="acc-title">Private Address Ranges</span>
+          <span class="acc-cidrs">10.0.0.0/8 · 172.16.0.0/12 · 192.168.0.0/16</span>
+        </div>
+        <span class="acc-chevron">▶</span>
+      </button>
+      <div class="acc-body" id="body-rfc1918">
+        <div class="acc-body-inner">
+          <div class="ranges-row" id="rfc1918Grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RFC 6598 block -->
+    <div class="acc-block acc-block-rfc6598" id="acc-rfc6598">
+      <button class="acc-header" onclick="toggleAcc('acc-rfc6598')" aria-expanded="false">
+        <div class="acc-header-left">
+          <span class="acc-rfc-tag rfc6598-tag">RFC 6598</span>
+          <span class="acc-title">Shared Address Space</span>
+          <span class="acc-cidrs">100.64.0.0/10 · CGNAT · Tailscale · NetBird</span>
+        </div>
+        <span class="acc-chevron">▶</span>
+      </button>
+      <div class="acc-body" id="body-rfc6598">
+        <div class="acc-body-inner">
+          <div class="ranges-row" id="rfc6598Grid"></div>
+          <div class="rfc6598-detail">
+            <p class="rfc6598-intro">
+              Defined in <strong>RFC 6598 (2012)</strong>, the <code>100.64.0.0/10</code> block is not an RFC 1918 range — it is <strong>Shared Address Space</strong>, a third category of non-routable IPv4 addresses. It was carved out specifically for <strong>Carrier-Grade NAT (CGNAT)</strong>, the mechanism ISPs use to share a single public IPv4 address across hundreds of subscribers as the global address pool exhausted. Traffic in this range is <strong>never forwarded by Internet routers</strong>, but unlike RFC 1918 it is also not intended for general private networks — it sits in a grey zone between an ISP's infrastructure and the public internet.
+            </p>
+            <div class="rfc6598-note">
+              <strong>Why a new block?</strong> If ISPs had used 10.x.x.x for CGNAT, collisions with customers' own RFC 1918 LANs would break end-to-end connectivity. <code>100.64.0.0/10</code> gives ISPs 4 million addresses that are globally reserved, won't appear in customer networks, and won't leak to the public internet — a clean boundary for the SP-to-CPE link.
+            </div>
+            <div class="users-grid">
+              <div class="user-card user-card-tailscale">
+                <div class="user-card-header">
+                  <div class="user-card-icon">🦎</div>
+                  <div class="user-card-name">Tailscale</div>
+                  <div class="user-card-tag">WireGuard VPN</div>
+                </div>
+                <div class="user-card-desc">
+                  Tailscale assigns every enrolled device a stable <code>100.x.y.z</code> address (a "Tailscale IP") from the <code>100.64.0.0/10</code> block. Devices reach each other directly over WireGuard tunnels — the overlay works regardless of whether the underlying network is RFC 1918, public, or even another CGNAT. The CGNAT block was chosen precisely because it doesn't overlap with RFC 1918, so Tailscale addresses won't clash with home or office LANs.
+                </div>
+              </div>
+              <div class="user-card user-card-netbird">
+                <div class="user-card-header">
+                  <div class="user-card-icon">🐦</div>
+                  <div class="user-card-name">NetBird</div>
+                  <div class="user-card-tag">WireGuard VPN</div>
+                </div>
+                <div class="user-card-desc">
+                  NetBird (open-source peer-to-peer VPN) also defaults to the <code>100.64.0.0/10</code> range for its WireGuard overlay. Each peer receives a <code>/32</code> address within the block from the management plane. Admins can override to any private range, but the default mirrors Tailscale's reasoning: CGNAT space avoids RFC 1918 conflicts and is globally non-routable, making it ideal for zero-trust overlays deployed across heterogeneous environments.
+                </div>
+              </div>
+              <div class="user-card user-card-isp">
+                <div class="user-card-header">
+                  <div class="user-card-icon">🏭</div>
+                  <div class="user-card-name">ISP / CGNAT</div>
+                  <div class="user-card-tag">Original use</div>
+                </div>
+                <div class="user-card-desc">
+                  The original intent: ISPs assign <code>100.64.x.x</code> addresses to CPE (home router WAN interfaces). The ISP's CGNAT device translates those to a small pool of public IPs. Subscribers share public addresses via PAT. This is why addresses starting with <code>100.64</code>–<code>100.127</code> can show up in <code>traceroute</code> hops — they are SP infrastructure, not your LAN.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 
   <div class="section-label">02 — ip address inspector</div>
   <div class="tool-panel panel-ip-lookup">
@@ -873,35 +1204,69 @@ function toBin32(n) {
 function fmt(n) { return n.toLocaleString(); }
 
 // ═══════════════════════════════════════════════
-//  RFC 1918 RANGE CARDS
+//  RANGE DATA
 // ═══════════════════════════════════════════════
 const RFC1918 = [
-  { cidr: '10.0.0.0/8',     prefix: 8,  cls: 'range-a', label: 'Class A' },
-  { cidr: '172.16.0.0/12',  prefix: 12, cls: 'range-b', label: 'Class B' },
-  { cidr: '192.168.0.0/16', prefix: 16, cls: 'range-c', label: 'Class C' },
+  { cidr: '10.0.0.0/8',      prefix: 8,  cls: 'range-a', label: 'Class A',      rfc: '1918' },
+  { cidr: '172.16.0.0/12',   prefix: 12, cls: 'range-b', label: 'Class B',      rfc: '1918' },
+  { cidr: '192.168.0.0/16',  prefix: 16, cls: 'range-c', label: 'Class C',      rfc: '1918' },
+  { cidr: '100.64.0.0/10',   prefix: 10, cls: 'range-d', label: 'CGNAT/Shared', rfc: '6598' },
 ];
 
+function renderCard(r) {
+  const p    = parseCidr(r.cidr);
+  const info = cidrInfo(p.ip, p.prefix);
+  return `
+  <div class="range-card ${r.cls}">
+    <div class="range-header">
+      <div class="range-cidr">${r.cidr}</div>
+      <div class="range-prefix-badge">${r.label}</div>
+    </div>
+    <div class="range-rows">
+      <div class="range-row"><span class="range-row-label">Network</span><span class="range-row-value">${intToIp(info.network)}</span></div>
+      <div class="range-row"><span class="range-row-label">Subnet Mask</span><span class="range-row-value">${intToIp(info.mask)}</span></div>
+      <div class="range-row"><span class="range-row-label">First Host</span><span class="range-row-value">${intToIp(info.firstHost)}</span></div>
+      <div class="range-row"><span class="range-row-label">Last Host</span><span class="range-row-value">${intToIp(info.lastHost)}</span></div>
+      <div class="range-row"><span class="range-row-label">Broadcast</span><span class="range-row-value">${intToIp(info.bcast)}</span></div>
+      <div class="range-row"><span class="range-row-label">Total IPs</span><span class="range-row-value accent">${fmt(info.total)}</span></div>
+      <div class="range-row"><span class="range-row-label">Usable Hosts</span><span class="range-row-value accent">${fmt(info.usable)}</span></div>
+    </div>
+  </div>`;
+}
+
 function buildRangesGrid() {
-  document.getElementById('rangesGrid').innerHTML = RFC1918.map(r => {
-    const p    = parseCidr(r.cidr);
-    const info = cidrInfo(p.ip, p.prefix);
-    return `
-    <div class="range-card ${r.cls}">
-      <div class="range-header">
-        <div class="range-cidr">${r.cidr}</div>
-        <div class="range-prefix-badge">${r.label}</div>
-      </div>
-      <div class="range-rows">
-        <div class="range-row"><span class="range-row-label">Network</span><span class="range-row-value">${intToIp(info.network)}</span></div>
-        <div class="range-row"><span class="range-row-label">Subnet Mask</span><span class="range-row-value">${intToIp(info.mask)}</span></div>
-        <div class="range-row"><span class="range-row-label">First Host</span><span class="range-row-value">${intToIp(info.firstHost)}</span></div>
-        <div class="range-row"><span class="range-row-label">Last Host</span><span class="range-row-value">${intToIp(info.lastHost)}</span></div>
-        <div class="range-row"><span class="range-row-label">Broadcast</span><span class="range-row-value">${intToIp(info.bcast)}</span></div>
-        <div class="range-row"><span class="range-row-label">Total IPs</span><span class="range-row-value accent">${fmt(info.total)}</span></div>
-        <div class="range-row"><span class="range-row-label">Usable Hosts</span><span class="range-row-value accent">${fmt(info.usable)}</span></div>
-      </div>
-    </div>`;
-  }).join('');
+  document.getElementById('rfc1918Grid').innerHTML = RFC1918.filter(r => r.rfc === '1918').map(renderCard).join('');
+  document.getElementById('rfc6598Grid').innerHTML = RFC1918.filter(r => r.rfc === '6598').map(renderCard).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  ACCORDION
+// ═══════════════════════════════════════════════
+function toggleAcc(id) {
+  const block  = document.getElementById(id);
+  const bodyId = id.replace('acc-', 'body-');
+  const body   = document.getElementById(bodyId);
+  const btn    = block.querySelector('.acc-header');
+  const isOpen = block.classList.contains('open');
+
+  if (isOpen) {
+    // Collapse: fix height first, then animate to 0
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => {
+      body.style.transition = 'max-height 0.35s ease';
+      body.style.maxHeight  = '0';
+    });
+    block.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+  } else {
+    // Expand
+    block.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.addEventListener('transitionend', () => {
+      if (block.classList.contains('open')) body.style.maxHeight = 'none';
+    }, { once: true });
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -961,12 +1326,17 @@ function runIpLookup() {
   const priv = isPrivate(ip);
 
   const hlCls = priv
-    ? (priv.cls === 'range-a' ? 'hl-cyan' : priv.cls === 'range-b' ? 'hl-mag' : 'hl-green')
+    ? ({ 'range-a': 'hl-cyan', 'range-b': 'hl-mag', 'range-c': 'hl-green', 'range-d': 'hl-orange' }[priv.cls] || '')
     : '';
 
-  const banner = priv
-    ? `<div class="private-banner is-private">✓ Private — falls within RFC 1918 range <strong>${priv.cidr}</strong> (${priv.label})</div>`
-    : `<div class="private-banner is-public">⚡ Public address — not in any RFC 1918 private range</div>`;
+  let banner;
+  if (!priv) {
+    banner = `<div class="private-banner is-public">⚡ Public address — not in any reserved private range</div>`;
+  } else if (priv.rfc === '6598') {
+    banner = `<div class="private-banner is-cgnat">🛰️ RFC 6598 Shared Address Space — <strong>${priv.cidr}</strong> (CGNAT / Tailscale / NetBird overlay range)</div>`;
+  } else {
+    banner = `<div class="private-banner is-private">✓ RFC 1918 Private — falls within <strong>${priv.cidr}</strong> (${priv.label})</div>`;
+  }
 
   const cards = [
     { label: 'IP Address',      value: intToIp(ip),              cls: hlCls },
