@@ -4,420 +4,454 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CIDR Calculator — RFC 1918 & RFC 6598</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='14' fill='%2300c2ff'/><text x='50' y='68' font-family='Arial,sans-serif' font-size='54' font-weight='bold' text-anchor='middle' fill='white'>⧖</text></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='8' fill='%23ea580c'/><text x='50' y='70' font-family='monospace' font-size='56' font-weight='bold' text-anchor='middle' fill='white'>⧖</text></svg>">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
-
-  /* ══════════════════════════════════════════
-     THEME TOKENS
-     Default = light; media query adds dark.
-     data-theme attr overrides both.
-  ══════════════════════════════════════════ */
+  /* ── THEME TOKENS ─────────────────────────────── */
   :root {
-    --bg:        #f4f6fb;
+    --bg:        #f5f5f4;
     --surface:   #ffffff;
-    --border:    #dde3f0;
-    --text:      #1a1a2e;
-    --muted:     #6b7a99;
-    --grid-line: rgba(0,120,200,0.05);
-    --blob:      rgba(200,0,160,0.06);
-
-    --cyan:      #007ab8;
-    --cyan-dim:  #005c8a;
-    --magenta:   #c4008e;
-    --magenta-d: #8a0064;
-    --green:     #007a40;
-    --green-d:   #005c2e;
-    --yellow:    #907000;
-    --yellow-d:  #705500;
-    --orange:    #b84400;
-    --orange-d:  #8a3300;
-    --violet:    #6a2eb8;
-    --violet-d:  #4e228a;
-    --error:     #cc2222;
-
-    /* card top-bar gradients */
-    --grad-a: linear-gradient(90deg,#007ab8,#6a2eb8);
-    --grad-b: linear-gradient(90deg,#c4008e,#b84400);
-    --grad-c: linear-gradient(90deg,#007a40,#907000);
-    --grad-d: linear-gradient(90deg,#c47000,#8a4400);
+    --surface-2: #e7e5e4;
+    --border:    #d6d3d1;
+    --border-2:  #a8a29e;
+    --text:      #09090b;
+    --text-2:    #3f3f46;
+    --text-3:    #71717a;
+    --accent:    #ea580c;
+    --accent-2:  #c2410c;
+    --btn-bg:    #fdba74;
+    --btn-text:  #431407;
+    --btn-border:#9a3412;
+    --err-bg:    #fff1f2;
+    --err-border:#fecdd3;
+    --err-text:  #be123c;
+    --ok-bg:     #f0fdf4;
+    --ok-border: #bbf7d0;
+    --ok-text:   #15803d;
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg:        #08080f;
-      --surface:   #0f0f1a;
-      --border:    #1a1a2e;
-      --text:      #e8eaf6;
-      --muted:     #546e8a;
-      --grid-line: rgba(0,194,255,0.03);
-      --blob:      rgba(255,0,200,0.07);
-
-      --cyan:      #00c2ff;
-      --cyan-dim:  #0099cc;
-      --magenta:   #ff00c8;
-      --magenta-d: #cc0099;
-      --green:     #00ff88;
-      --green-d:   #00cc66;
-      --yellow:    #ffe600;
-      --yellow-d:  #ccb800;
-      --orange:    #ff6b00;
-      --orange-d:  #cc5500;
-      --violet:    #b66dff;
-      --violet-d:  #8844cc;
-      --error:     #ff4444;
-
-      --grad-a: linear-gradient(90deg,#00c2ff,#b66dff);
-      --grad-b: linear-gradient(90deg,#ff00c8,#ff6b00);
-      --grad-c: linear-gradient(90deg,#00ff88,#ffe600);
-      --grad-d: linear-gradient(90deg,#ffaa00,#ff6b00);
+      --bg:        #060608;
+      --surface:   #0f0f12;
+      --surface-2: #18181b;
+      --border:    #27272a;
+      --border-2:  #3f3f46;
+      --text:      #fafafa;
+      --text-2:    #d4d4d8;
+      --text-3:    #71717a;
+      --accent:    #ea580c;
+      --accent-2:  #c2410c;
+      --btn-bg:    #fdba74;
+      --btn-text:  #431407;
+      --btn-border:#9a3412;
+      --err-bg:    #1c0e0e;
+      --err-border:#7f1d1d;
+      --err-text:  #fca5a5;
+      --ok-bg:     #052e16;
+      --ok-border: #14532d;
+      --ok-text:   #86efac;
     }
   }
 
   [data-theme="dark"] {
-    --bg:        #08080f;
-    --surface:   #0f0f1a;
-    --border:    #1a1a2e;
-    --text:      #e8eaf6;
-    --muted:     #546e8a;
-    --grid-line: rgba(0,194,255,0.03);
-    --blob:      rgba(255,0,200,0.07);
-
-    --cyan:      #00c2ff;
-    --cyan-dim:  #0099cc;
-    --magenta:   #ff00c8;
-    --magenta-d: #cc0099;
-    --green:     #00ff88;
-    --green-d:   #00cc66;
-    --yellow:    #ffe600;
-    --yellow-d:  #ccb800;
-    --orange:    #ff6b00;
-    --orange-d:  #cc5500;
-    --violet:    #b66dff;
-    --violet-d:  #8844cc;
-    --error:     #ff4444;
-
-    --grad-a: linear-gradient(90deg,#00c2ff,#b66dff);
-    --grad-b: linear-gradient(90deg,#ff00c8,#ff6b00);
-    --grad-c: linear-gradient(90deg,#00ff88,#ffe600);
-    --grad-d: linear-gradient(90deg,#ffaa00,#ff6b00);
+    --bg:        #060608;
+    --surface:   #0f0f12;
+    --surface-2: #18181b;
+    --border:    #27272a;
+    --border-2:  #3f3f46;
+    --text:      #fafafa;
+    --text-2:    #d4d4d8;
+    --text-3:    #71717a;
+    --accent:    #ea580c;
+    --accent-2:  #c2410c;
+    --btn-bg:    #fdba74;
+    --btn-text:  #431407;
+    --btn-border:#9a3412;
+    --err-bg:    #1c0e0e;
+    --err-border:#7f1d1d;
+    --err-text:  #fca5a5;
+    --ok-bg:     #052e16;
+    --ok-border: #14532d;
+    --ok-text:   #86efac;
   }
 
   [data-theme="light"] {
-    --bg:        #f4f6fb;
+    --bg:        #f5f5f4;
     --surface:   #ffffff;
-    --border:    #dde3f0;
-    --text:      #1a1a2e;
-    --muted:     #6b7a99;
-    --grid-line: rgba(0,120,200,0.05);
-    --blob:      rgba(200,0,160,0.06);
-
-    --cyan:      #007ab8;
-    --cyan-dim:  #005c8a;
-    --magenta:   #c4008e;
-    --magenta-d: #8a0064;
-    --green:     #007a40;
-    --green-d:   #005c2e;
-    --yellow:    #907000;
-    --yellow-d:  #705500;
-    --orange:    #b84400;
-    --orange-d:  #8a3300;
-    --violet:    #6a2eb8;
-    --violet-d:  #4e228a;
-    --error:     #cc2222;
-
-    --grad-a: linear-gradient(90deg,#007ab8,#6a2eb8);
-    --grad-b: linear-gradient(90deg,#c4008e,#b84400);
-    --grad-c: linear-gradient(90deg,#007a40,#907000);
-    --grad-d: linear-gradient(90deg,#c47000,#8a4400);
+    --surface-2: #e7e5e4;
+    --border:    #d6d3d1;
+    --border-2:  #a8a29e;
+    --text:      #09090b;
+    --text-2:    #3f3f46;
+    --text-3:    #71717a;
+    --accent:    #ea580c;
+    --accent-2:  #c2410c;
+    --btn-bg:    #fdba74;
+    --btn-text:  #431407;
+    --btn-border:#9a3412;
+    --err-bg:    #fff1f2;
+    --err-border:#fecdd3;
+    --err-text:  #be123c;
+    --ok-bg:     #f0fdf4;
+    --ok-border: #bbf7d0;
+    --ok-text:   #15803d;
   }
 
-  /* ══════════════════════════════════════════
-     BASE
-  ══════════════════════════════════════════ */
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* ── BASE ────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Syne', sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                 Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
     min-height: 100vh;
-    overflow-x: hidden;
-    transition: background 0.3s, color 0.3s;
+    transition: background 0.2s, color 0.2s;
   }
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--grid-line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-    background-size: 36px 36px;
-    pointer-events: none;
-    z-index: 0;
+  .mono {
+    font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro',
+                 Menlo, Consolas, 'Courier New', monospace;
   }
 
-  body::after {
-    content: '';
-    position: fixed;
-    top: -200px; left: 50%;
-    transform: translateX(-50%);
-    width: 800px; height: 400px;
-    background: radial-gradient(ellipse, var(--blob) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
+  code {
+    font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro',
+                 Menlo, Consolas, 'Courier New', monospace;
+    font-size: 0.9em;
+    color: var(--accent);
   }
 
-  /* ══════════════════════════════════════════
-     THEME TOGGLE
-  ══════════════════════════════════════════ */
+  /* ── THEME TOGGLE ───────────────────────────── */
   .theme-toggle {
     position: fixed;
-    top: 16px; right: 16px;
+    top: 14px; right: 16px;
     z-index: 100;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text-2);
     cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: border-color 0.15s, color 0.15s;
   }
+  .theme-toggle:hover { border-color: var(--border-2); color: var(--text); }
 
-  .theme-toggle:hover {
-    border-color: var(--cyan);
-    color: var(--cyan);
-    box-shadow: 0 2px 16px rgba(0,0,0,0.15);
-  }
-
-  .theme-toggle .toggle-icon { font-size: 14px; }
-  .theme-toggle .toggle-label { letter-spacing: 1px; }
-
-  /* ══════════════════════════════════════════
-     HEADER
-  ══════════════════════════════════════════ */
+  /* ── HEADER ──────────────────────────────────── */
   header {
+    border-bottom: 1px solid var(--border);
+    padding: 52px 24px 40px;
     text-align: center;
-    padding: 56px 24px 36px;
-    position: relative;
-    z-index: 1;
-  }
-
-  header::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 700px; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), transparent);
   }
 
   .badge {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: ui-monospace, Menlo, monospace;
     font-size: 10px;
-    letter-spacing: 3px;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 4px 16px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 3px 10px;
     border-radius: 2px;
-    margin-bottom: 20px;
-    background: rgba(0,194,255,0.08);
-    border: 1px solid var(--cyan);
-    color: var(--cyan);
-    animation: pulse-badge 3s ease-in-out infinite;
-  }
-
-  @keyframes pulse-badge {
-    0%,100% { box-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 30%, transparent); }
-    50%      { box-shadow: 0 0 20px color-mix(in srgb, var(--cyan) 60%, transparent); }
+    margin-bottom: 18px;
+    opacity: 0.9;
   }
 
   h1 {
-    font-size: clamp(30px, 5vw, 54px);
+    font-size: clamp(26px, 4vw, 42px);
     font-weight: 800;
-    letter-spacing: -1px;
-    background: linear-gradient(135deg, var(--cyan) 0%, var(--magenta) 50%, var(--yellow) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 8px;
     line-height: 1.1;
-    margin-bottom: 12px;
   }
 
   .subtitle {
-    color: var(--muted);
-    font-size: 14px;
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: 1px;
-  }
-
-  /* ══════════════════════════════════════════
-     LAYOUT
-  ══════════════════════════════════════════ */
-  .main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 48px 24px 80px;
-    position: relative;
-    z-index: 1;
-  }
-
-  .section-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .section-label::after {
-    content: '';
-    flex: 1; height: 1px;
-    background: linear-gradient(90deg, var(--border), transparent);
-  }
-
-  /* ══════════════════════════════════════════
-     RFC RANGE CARDS
-  ══════════════════════════════════════════ */
-
-  .range-card {
-    background: var(--surface);
-    border-radius: 10px;
-    padding: 20px 24px;
-    border: 1px solid var(--border);
-    transition: all 0.3s;
-    cursor: default;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .range-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 3px;
-  }
-
-  .range-card:hover { transform: translateY(-3px); }
-
-  .range-a::before { background: var(--grad-a); }
-  .range-b::before { background: var(--grad-b); }
-  .range-c::before { background: var(--grad-c); }
-  .range-d::before { background: var(--grad-d); }
-
-  .range-a:hover { border-color: var(--cyan-dim); box-shadow: 0 4px 24px color-mix(in srgb, var(--cyan) 15%, transparent); }
-  .range-b:hover { border-color: var(--magenta-d); box-shadow: 0 4px 24px color-mix(in srgb, var(--magenta) 15%, transparent); }
-  .range-c:hover { border-color: var(--green-d); box-shadow: 0 4px 24px color-mix(in srgb, var(--green) 15%, transparent); }
-  .range-d:hover { border-color: var(--orange-d); box-shadow: 0 4px 24px color-mix(in srgb, var(--orange) 15%, transparent); }
-
-  .range-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-  }
-
-  .range-cidr {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 20px;
-    font-weight: 700;
-  }
-
-  .range-a .range-cidr { color: var(--cyan); }
-  .range-b .range-cidr { color: var(--magenta); }
-  .range-c .range-cidr { color: var(--green); }
-  .range-d .range-cidr { color: var(--orange); }
-
-  .range-prefix-badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 4px;
-    font-weight: 700;
-  }
-
-  .range-a .range-prefix-badge { background: color-mix(in srgb, var(--cyan) 12%, transparent); color: var(--cyan); border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent); }
-  .range-b .range-prefix-badge { background: color-mix(in srgb, var(--magenta) 12%, transparent); color: var(--magenta); border: 1px solid color-mix(in srgb, var(--magenta) 30%, transparent); }
-  .range-c .range-prefix-badge { background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 30%, transparent); }
-  .range-d .range-prefix-badge { background: color-mix(in srgb, var(--orange) 12%, transparent); color: var(--orange); border: 1px solid color-mix(in srgb, var(--orange) 30%, transparent); }
-
-  .range-rows { display: flex; flex-direction: column; gap: 7px; }
-
-  .range-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: ui-monospace, Menlo, monospace;
     font-size: 12px;
+    color: var(--text-3);
+    letter-spacing: 0.03em;
   }
 
-  .range-row-label { color: var(--muted); }
-  .range-row-value { color: var(--text); font-weight: 700; }
-
-  .range-a .range-row-value.accent { color: var(--cyan); font-size: 13px; }
-  .range-b .range-row-value.accent { color: var(--magenta); font-size: 13px; }
-  .range-c .range-row-value.accent { color: var(--green); font-size: 13px; }
-  .range-d .range-row-value.accent { color: var(--orange); font-size: 13px; }
-
-  /* ══════════════════════════════════════════
-     TOOL PANELS
-  ══════════════════════════════════════════ */
-  .tool-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 28px;
-    margin-bottom: 32px;
-    position: relative;
-    overflow: hidden;
-    transition: background 0.3s, border-color 0.3s;
+  /* ── LAYOUT ──────────────────────────────────── */
+  .main {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 52px 24px 96px;
   }
 
-  .tool-panel::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 2px;
-  }
-
-  .panel-ip-lookup::before  { background: var(--grad-a); }
-  .panel-splitter::before   { background: var(--grad-b); }
-
-  .panel-title {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 6px;
+  /* ── SECTION LABEL ───────────────────────────── */
+  .section-label {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-bottom: 14px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
   }
 
-  .panel-ip-lookup .panel-title { color: var(--cyan); }
-  .panel-splitter .panel-title  { color: var(--magenta); }
+  .section-num { color: var(--accent); font-weight: 700; }
 
-  .panel-desc {
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── ACCORDION ───────────────────────────────── */
+  .accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 52px;
+  }
+
+  .acc-block {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .acc-block.open { border-color: var(--border-2); }
+
+  .acc-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    gap: 12px;
+    transition: background 0.12s;
+  }
+
+  .acc-header:hover { background: var(--surface-2); }
+
+  .acc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .acc-rfc-tag {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 7px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  .acc-title {
     font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 22px;
-    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--text);
+    flex-shrink: 0;
   }
 
-  /* ══════════════════════════════════════════
-     INPUTS
-  ══════════════════════════════════════════ */
+  .acc-cidrs {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .acc-chevron {
+    font-size: 9px;
+    color: var(--text-3);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .acc-block.open .acc-chevron { transform: rotate(90deg); }
+
+  .acc-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.32s ease;
+  }
+
+  .acc-body-inner {
+    border-top: 1px solid var(--border);
+    padding: 20px 16px;
+  }
+
+  /* ── RANGE TABLE ─────────────────────────────── */
+  .table-scroll { overflow-x: auto; }
+
+  .range-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .range-table th {
+    padding: 0 16px 8px 0;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .range-table th:last-child,
+  .range-table td:last-child { text-align: right; padding-right: 0; }
+
+  .range-table td {
+    padding: 9px 16px 9px 0;
+    color: var(--text-2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .range-table tr:last-child td { border-bottom: none; }
+  .range-table td.td-cidr  { color: var(--accent); font-weight: 700; font-size: 13px; }
+  .range-table td.td-count { color: var(--text); font-weight: 600; }
+
+  /* ── RFC 6598 EXPLAINER ──────────────────────── */
+  .rfc6598-detail {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .detail-intro {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.75;
+    margin-bottom: 14px;
+    max-width: 760px;
+  }
+
+  .detail-intro strong { color: var(--text); font-weight: 600; }
+
+  .detail-note {
+    border-left: 2px solid var(--accent);
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin-bottom: 20px;
+    background: color-mix(in srgb, var(--accent) 4%, transparent);
+  }
+
+  .detail-note strong { color: var(--accent); font-weight: 600; }
+
+  .users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 8px;
+  }
+
+  .user-card {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 14px 16px;
+    background: var(--surface);
+    transition: border-color 0.12s;
+  }
+
+  .user-card:hover { border-color: var(--border-2); }
+
+  .user-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .user-card-icon { font-size: 16px; }
+
+  .user-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .user-card-tag {
+    margin-left: auto;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text-3);
+  }
+
+  .user-card-desc {
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.65;
+  }
+
+  /* ── PANELS ──────────────────────────────────── */
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--surface);
+    margin-bottom: 52px;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .panel-hint {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  .panel-body { padding: 20px 16px; }
+
+  /* ── INPUTS ──────────────────────────────────── */
   .input-row {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 24px;
+    align-items: flex-end;
+    margin-bottom: 20px;
   }
 
   .input-group {
@@ -428,570 +462,349 @@
     min-width: 180px;
   }
 
-  .input-group label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
+  .input-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-2);
   }
 
-  .input-group input,
-  .input-group select {
+  .input-group input {
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 14px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+    border-radius: 3px;
+    padding: 7px 11px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
     color: var(--text);
     outline: none;
-    transition: border-color 0.25s, box-shadow 0.25s, background 0.3s;
     width: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
 
-  .input-group input:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px color-mix(in srgb, var(--cyan) 15%, transparent); }
-  .input-group.splitter-input input:focus,
-  .input-group.splitter-input select:focus { border-color: var(--magenta); box-shadow: 0 0 0 2px color-mix(in srgb, var(--magenta) 15%, transparent); }
+  .input-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
 
-  .input-group input::placeholder { color: var(--muted); }
-  .input-group select option { background: var(--surface); color: var(--text); }
+  .input-group input::placeholder { color: var(--text-3); }
 
+  input[type="range"] {
+    accent-color: var(--accent);
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  /* ── BUTTON ──────────────────────────────────── */
   .btn {
-    align-self: flex-end;
-    padding: 11px 24px;
-    border-radius: 6px;
-    border: none;
-    font-family: 'JetBrains Mono', monospace;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 18px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
+    border-radius: 3px;
+    font-family: inherit;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-end;
+    transition: background 0.12s, box-shadow 0.12s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.12),
+                inset 0 1px 0 rgba(255,255,255,0.1);
   }
 
-  .btn-cyan    { background: var(--grad-a); color: #fff; }
-  .btn-magenta { background: var(--grad-b); color: #fff; }
+  .btn:hover {
+    background: #fbbf7a;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.18),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+  }
 
-  .btn-cyan:hover    { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 4px 20px color-mix(in srgb, var(--cyan) 35%, transparent); }
-  .btn-magenta:hover { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 4px 20px color-mix(in srgb, var(--magenta) 35%, transparent); }
+  .btn:active {
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+  }
 
-  /* ══════════════════════════════════════════
-     RESULTS
-  ══════════════════════════════════════════ */
-  .result-area { display: none; animation: fade-in 0.3s ease; }
+  /* ── RESULTS ─────────────────────────────────── */
+  .result-area { display: none; animation: fade-in 0.2s ease; }
   .result-area.visible { display: block; }
 
   @keyframes fade-in {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(3px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .result-error {
-    background: color-mix(in srgb, var(--error) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
-    border-radius: 8px;
-    padding: 14px 16px;
-    color: var(--error);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+  .msg {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-  }
-
-  .ip-result-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
+    padding: 9px 14px;
+    border-radius: 3px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
     margin-bottom: 16px;
   }
 
-  .ip-result-card {
-    background: color-mix(in srgb, var(--border) 30%, transparent);
+  .msg.err    { background: var(--err-bg); border: 1px solid var(--err-border); color: var(--err-text); }
+  .msg.ok     { background: var(--ok-bg);  border: 1px solid var(--ok-border);  color: var(--ok-text);  }
+  .msg.cgnat  { background: color-mix(in srgb, var(--accent) 6%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); }
+  .msg.muted  { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); }
+
+  .msg strong { font-weight: 700; color: inherit; }
+
+  /* IP result grid */
+  .ip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 1px;
+    background: var(--border);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px 16px;
-    transition: border-color 0.3s, background 0.3s;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 16px;
   }
 
-  .ip-result-card.hl-cyan   { border-color: color-mix(in srgb, var(--cyan) 40%, transparent); background: color-mix(in srgb, var(--cyan) 6%, transparent); }
-  .ip-result-card.hl-mag    { border-color: color-mix(in srgb, var(--magenta) 40%, transparent); background: color-mix(in srgb, var(--magenta) 6%, transparent); }
-  .ip-result-card.hl-green  { border-color: color-mix(in srgb, var(--green) 40%, transparent); background: color-mix(in srgb, var(--green) 6%, transparent); }
-  .ip-result-card.hl-orange { border-color: color-mix(in srgb, var(--orange) 40%, transparent); background: color-mix(in srgb, var(--orange) 6%, transparent); }
+  .ip-cell {
+    background: var(--surface);
+    padding: 10px 14px;
+  }
 
-  .ip-result-card .card-label {
-    font-family: 'JetBrains Mono', monospace;
+  .ip-cell-label {
+    font-family: ui-monospace, Menlo, monospace;
     font-size: 9px;
-    letter-spacing: 2px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 5px;
+    color: var(--text-3);
+    margin-bottom: 3px;
   }
 
-  .ip-result-card .card-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 15px;
-    font-weight: 700;
+  .ip-cell-value {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text);
   }
 
-  .ip-result-card.hl-cyan   .card-value { color: var(--cyan); }
-  .ip-result-card.hl-mag    .card-value { color: var(--magenta); }
-  .ip-result-card.hl-green  .card-value { color: var(--green); }
-  .ip-result-card.hl-orange .card-value { color: var(--orange); }
+  .ip-cell.accent .ip-cell-value { color: var(--accent); }
 
-  .private-banner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    margin-bottom: 16px;
-  }
-
-  .private-banner.is-private {
-    background: color-mix(in srgb, var(--green) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
-    color: var(--green);
-  }
-
-  .private-banner.is-cgnat {
-    background: color-mix(in srgb, var(--orange) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--orange) 30%, transparent);
-    color: var(--orange);
-  }
-
-  .private-banner.is-public {
-    background: color-mix(in srgb, var(--muted) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
-    color: var(--muted);
-  }
-
-  /* ══════════════════════════════════════════
-     RFC 6598 EXPLAINER PANEL
-  ══════════════════════════════════════════ */
-  .rfc6598-box {
-    background: var(--surface);
-    border: 1px solid color-mix(in srgb, var(--orange) 25%, transparent);
-    border-radius: 12px;
-    padding: 28px;
-    margin-bottom: 32px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 0 40px color-mix(in srgb, var(--orange) 6%, transparent);
-    transition: background 0.3s, border-color 0.3s;
-  }
-
-  .rfc6598-box::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 2px;
-    background: var(--grad-d);
-  }
-
-  .rfc6598-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--orange);
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .rfc6598-intro {
-    font-size: 13px;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    line-height: 1.7;
-    margin-bottom: 24px;
-  }
-
-  .rfc6598-intro strong { color: var(--text); }
-  .rfc6598-intro code   { color: var(--orange); font-size: 12px; }
-
-  .rfc6598-note {
-    background: color-mix(in srgb, var(--orange) 6%, transparent);
-    border-left: 3px solid var(--orange);
-    border-radius: 0 6px 6px 0;
-    padding: 12px 16px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.7;
-    margin-bottom: 24px;
-  }
-
-  .rfc6598-note strong { color: var(--orange); }
-
-  .users-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 14px;
-  }
-
-  .user-card {
-    border-radius: 8px;
-    padding: 16px 18px;
-    border: 1px solid var(--border);
-    transition: all 0.3s;
-  }
-
-  .user-card:hover { transform: translateY(-2px); }
-
-  .user-card-tailscale { background: color-mix(in srgb, #0090ff 6%, transparent); border-color: color-mix(in srgb, #0090ff 25%, transparent); }
-  .user-card-netbird   { background: color-mix(in srgb, var(--violet) 6%, transparent); border-color: color-mix(in srgb, var(--violet) 25%, transparent); }
-  .user-card-isp       { background: color-mix(in srgb, var(--yellow) 6%, transparent); border-color: color-mix(in srgb, var(--yellow) 25%, transparent); }
-
-  .user-card-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .user-card-icon { font-size: 22px; }
-
-  .user-card-name {
-    font-weight: 700;
-    font-size: 14px;
-  }
-
-  .user-card-tailscale .user-card-name { color: #3b82f6; }
-  .user-card-netbird   .user-card-name { color: var(--violet); }
-  .user-card-isp       .user-card-name { color: var(--yellow); }
-
-  .user-card-tag {
-    margin-left: auto;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    padding: 2px 7px;
-    border-radius: 3px;
-    color: var(--muted);
-    border: 1px solid var(--border);
-  }
-
-  .user-card-desc {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    line-height: 1.65;
-  }
-
-  .user-card-desc code { font-size: 11px; }
-  .user-card-tailscale .user-card-desc code { color: #3b82f6; }
-  .user-card-netbird   .user-card-desc code { color: var(--violet); }
-  .user-card-isp       .user-card-desc code { color: var(--yellow); }
-
-  /* Bit display */
-  .bit-display {
-    background: color-mix(in srgb, var(--border) 20%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px 16px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+  /* ── BIT DISPLAY ─────────────────────────────── */
+  .bit-wrap {
     overflow-x: auto;
-    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--surface);
+    padding: 14px 16px;
+    margin-bottom: 10px;
   }
 
   .bit-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
+    gap: 12px;
+    margin-bottom: 7px;
     flex-wrap: nowrap;
   }
+
   .bit-row:last-child { margin-bottom: 0; }
 
-  .bit-label {
-    color: var(--muted);
+  .bit-row-label {
+    font-family: ui-monospace, Menlo, monospace;
     font-size: 10px;
-    letter-spacing: 1px;
-    min-width: 90px;
+    color: var(--text-3);
+    min-width: 82px;
     flex-shrink: 0;
+    letter-spacing: 0.03em;
   }
 
-  .bit-octets { display: flex; gap: 6px; flex-wrap: wrap; }
-  .bit-octet  { display: flex; gap: 1px; }
+  .bit-octets { display: flex; gap: 9px; }
+  .bit-octet  { display: flex; gap: 2px; }
 
   .bit {
     width: 10px; height: 18px;
-    border-radius: 2px;
+    border-radius: 1px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 9px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 8px;
     font-weight: 700;
   }
 
-  .bit.net  { background: color-mix(in srgb, var(--cyan) 25%, transparent); color: var(--cyan); border: 1px solid color-mix(in srgb, var(--cyan) 40%, transparent); }
-  .bit.host { background: color-mix(in srgb, var(--magenta) 15%, transparent); color: var(--magenta); border: 1px solid color-mix(in srgb, var(--magenta) 25%, transparent); }
-  .bit.one  { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); }
-  .bit.zero { background: color-mix(in srgb, var(--border) 50%, transparent); color: var(--muted); }
+  .bit.n1 { background: var(--accent); color: #fff; }
+  .bit.n0 { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); }
+  .bit.h1 { background: var(--border-2); color: var(--text-2); }
+  .bit.h0 { background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border); }
 
   .bit-legend {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    margin-bottom: 16px;
-  }
-
-  /* Subnet splitter */
-  .split-summary {
     display: flex;
-    gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 20px;
-  }
-
-  .split-stat {
-    background: color-mix(in srgb, var(--border) 30%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 16px;
-    min-width: 140px;
-    flex: 1;
-    transition: background 0.3s;
-  }
-
-  .split-stat .stat-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 4px;
-  }
-
-  .split-stat .stat-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--yellow);
-  }
-
-  .split-stat .stat-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-
-  .subnet-table-wrap {
-    max-height: 360px;
-    overflow-y: auto;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--magenta-d) transparent;
-  }
-
-  table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-
-  thead th {
-    position: sticky; top: 0;
-    background: var(--surface);
-    padding: 10px 14px;
-    text-align: left;
-    font-size: 9px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
-    z-index: 2;
-  }
-
-  tbody tr { border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); transition: background 0.15s; }
-  tbody tr:hover { background: color-mix(in srgb, var(--magenta) 5%, transparent); }
-  tbody tr:last-child { border-bottom: none; }
-
-  tbody td { padding: 8px 14px; color: var(--text); vertical-align: middle; }
-  tbody td.td-network { color: var(--magenta); font-weight: 700; }
-  tbody td.td-first   { color: var(--cyan); }
-  tbody td.td-last    { color: var(--violet); }
-  tbody td.td-bcast   { color: var(--orange); }
-  tbody td.td-count   { color: var(--green); text-align: right; }
-  tbody td.td-idx     { color: var(--muted); font-size: 10px; }
-
-  .truncation-note {
-    padding: 10px 14px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    text-align: center;
-    border-top: 1px solid var(--border);
-    background: var(--surface);
-  }
-
-  /* ══════════════════════════════════════════
-     ACCORDION
-  ══════════════════════════════════════════ */
-  .accordion {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 48px;
-  }
-
-  .acc-block {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    transition: border-color 0.25s, box-shadow 0.25s;
-    position: relative;
-  }
-
-  .acc-block::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    opacity: 0;
-    transition: opacity 0.25s;
-  }
-
-  .acc-block.open::before { opacity: 1; }
-  .acc-block-rfc1918::before { background: var(--grad-a); }
-  .acc-block-rfc6598::before { background: var(--grad-d); }
-
-  .acc-block-rfc1918.open { border-color: color-mix(in srgb, var(--cyan) 30%, transparent); }
-  .acc-block-rfc6598.open { border-color: color-mix(in srgb, var(--orange) 30%, transparent); }
-
-  .acc-header {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-align: left;
     gap: 14px;
-    color: var(--text);
-    transition: background 0.2s;
-  }
-
-  .acc-header:hover { background: color-mix(in srgb, var(--border) 40%, transparent); }
-
-  .acc-header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-    min-width: 0;
-    flex-wrap: wrap;
-  }
-
-  .acc-rfc-tag {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: ui-monospace, Menlo, monospace;
     font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 3px 10px;
-    border-radius: 3px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-
-  .rfc1918-tag { background: color-mix(in srgb, var(--cyan) 12%, transparent); color: var(--cyan); border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent); }
-  .rfc6598-tag { background: color-mix(in srgb, var(--orange) 12%, transparent); color: var(--orange); border: 1px solid color-mix(in srgb, var(--orange) 30%, transparent); }
-
-  .acc-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text);
-    flex-shrink: 0;
-  }
-
-  .acc-cidrs {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .acc-chevron {
-    font-size: 13px;
-    color: var(--muted);
-    transition: transform 0.25s ease;
-    flex-shrink: 0;
-  }
-
-  .acc-block.open .acc-chevron { transform: rotate(90deg); }
-
-  .acc-body {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.35s ease;
-  }
-
-  .acc-body-inner {
-    padding: 4px 20px 24px;
-  }
-
-  /* Card row inside accordion — all cards in one row */
-  .ranges-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
+    color: var(--text-3);
     margin-bottom: 0;
   }
 
-  /* RFC 6598 detail (inside accordion body) */
-  .rfc6598-detail {
-    margin-top: 20px;
-    border-top: 1px solid var(--border);
-    padding-top: 20px;
+  .bit-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
   }
 
-  /* ══════════════════════════════════════════
-     RESPONSIVE
-  ══════════════════════════════════════════ */
+  .bit-swatch {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
+  /* ── SPLIT STATS ─────────────────────────────── */
+  .split-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+
+  .split-stat {
+    background: var(--surface);
+    padding: 12px 16px;
+  }
+
+  .stat-label {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+
+  .stat-val {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+
+  .stat-val.sm { font-size: 13px; }
+
+  .stat-sub {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 10px;
+    color: var(--text-3);
+    margin-top: 2px;
+  }
+
+  /* ── DATA TABLE ──────────────────────────────── */
+  .data-wrap {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    max-height: 380px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-2) transparent;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+  }
+
+  .data-table thead th {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--surface-2);
+    padding: 8px 14px;
+    text-align: left;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .data-table thead th:last-child { text-align: right; }
+
+  .data-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  .data-table tbody tr:last-child { border-bottom: none; }
+  .data-table tbody tr:hover      { background: var(--surface-2); }
+
+  .data-table tbody td {
+    padding: 7px 14px;
+    color: var(--text-2);
+    white-space: nowrap;
+  }
+
+  .data-table td.td-idx   { color: var(--text-3); font-size: 10px; }
+  .data-table td.td-net   { color: var(--accent); font-weight: 700; }
+  .data-table td.td-count { color: var(--text); text-align: right; font-weight: 600; }
+
+  .trunc-note {
+    padding: 7px 14px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 10px;
+    color: var(--text-3);
+    text-align: center;
+    border-top: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  /* ── RESPONSIVE ──────────────────────────────── */
   @media (max-width: 600px) {
-    .ranges-row { grid-template-columns: 1fr; }
-    .acc-cidrs { display: none; }
-    .input-row { flex-direction: column; }
-    .btn { align-self: stretch; }
-    .bit { width: 8px; font-size: 7px; }
-    .theme-toggle .toggle-label { display: none; }
+    .acc-cidrs  { display: none; }
+    .panel-hint { display: none; }
+    .input-row  { flex-direction: column; }
+    .btn        { align-self: stretch; width: 100%; }
+    .bit        { width: 8px; font-size: 7px; }
   }
 </style>
 </head>
 <body>
 
-<!-- Theme toggle -->
-<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle dark/light mode">
-  <span class="toggle-icon" id="themeIcon">🌙</span>
-  <span class="toggle-label" id="themeLabel">dark</span>
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">
+  <span id="themeIcon">🌙</span>
+  <span id="themeLabel">dark</span>
 </button>
 
 <header>
-  <div class="badge">RFC 1918 · RFC 6598 · IPv4 · Private Networks</div>
+  <div class="badge">RFC 1918 · RFC 6598 · IPv4</div>
   <h1>CIDR Calculator</h1>
-  <p class="subtitle">// private ranges · shared address space · ip inspector · subnet splitter</p>
+  <p class="subtitle">private ranges &nbsp;·&nbsp; shared address space &nbsp;·&nbsp; ip inspector &nbsp;·&nbsp; subnet splitter</p>
 </header>
 
 <div class="main">
 
-  <div class="section-label">01 — reserved address ranges</div>
+  <!-- 01 RANGES -->
+  <div class="section-label">
+    <span class="section-num">01</span>
+    <span>reserved address ranges</span>
+    <span class="section-line"></span>
+  </div>
+
   <div class="accordion">
 
-    <!-- RFC 1918 block -->
-    <div class="acc-block acc-block-rfc1918" id="acc-rfc1918">
+    <div class="acc-block" id="acc-rfc1918">
       <button class="acc-header" onclick="toggleAcc('acc-rfc1918')" aria-expanded="false">
         <div class="acc-header-left">
-          <span class="acc-rfc-tag rfc1918-tag">RFC 1918</span>
+          <span class="acc-rfc-tag">RFC 1918</span>
           <span class="acc-title">Private Address Ranges</span>
           <span class="acc-cidrs">10.0.0.0/8 · 172.16.0.0/12 · 192.168.0.0/16</span>
         </div>
@@ -999,16 +812,17 @@
       </button>
       <div class="acc-body" id="body-rfc1918">
         <div class="acc-body-inner">
-          <div class="ranges-row" id="rfc1918Grid"></div>
+          <div class="table-scroll">
+            <table class="range-table" id="rfc1918Table"></table>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- RFC 6598 block -->
-    <div class="acc-block acc-block-rfc6598" id="acc-rfc6598">
+    <div class="acc-block" id="acc-rfc6598">
       <button class="acc-header" onclick="toggleAcc('acc-rfc6598')" aria-expanded="false">
         <div class="acc-header-left">
-          <span class="acc-rfc-tag rfc6598-tag">RFC 6598</span>
+          <span class="acc-rfc-tag">RFC 6598</span>
           <span class="acc-title">Shared Address Space</span>
           <span class="acc-cidrs">100.64.0.0/10 · CGNAT · Tailscale · NetBird</span>
         </div>
@@ -1016,44 +830,40 @@
       </button>
       <div class="acc-body" id="body-rfc6598">
         <div class="acc-body-inner">
-          <div class="ranges-row" id="rfc6598Grid"></div>
+          <div class="table-scroll">
+            <table class="range-table" id="rfc6598Table"></table>
+          </div>
           <div class="rfc6598-detail">
-            <p class="rfc6598-intro">
-              Defined in <strong>RFC 6598 (2012)</strong>, the <code>100.64.0.0/10</code> block is not an RFC 1918 range — it is <strong>Shared Address Space</strong>, a third category of non-routable IPv4 addresses. It was carved out specifically for <strong>Carrier-Grade NAT (CGNAT)</strong>, the mechanism ISPs use to share a single public IPv4 address across hundreds of subscribers as the global address pool exhausted. Traffic in this range is <strong>never forwarded by Internet routers</strong>, but unlike RFC 1918 it is also not intended for general private networks — it sits in a grey zone between an ISP's infrastructure and the public internet.
+            <p class="detail-intro">
+              Defined in <strong>RFC 6598 (2012)</strong>, the <code>100.64.0.0/10</code> block is not an RFC 1918 range — it is <strong>Shared Address Space</strong>, a third category of non-routable IPv4 addresses. It was carved out specifically for <strong>Carrier-Grade NAT (CGNAT)</strong>, the mechanism ISPs use to share a single public IP across hundreds of subscribers as the global address pool exhausted. Traffic in this range is <strong>never forwarded by Internet routers</strong> but, unlike RFC 1918, it is also not intended for general private use — it sits between an ISP's infrastructure and the public internet.
             </p>
-            <div class="rfc6598-note">
-              <strong>Why a new block?</strong> If ISPs had used 10.x.x.x for CGNAT, collisions with customers' own RFC 1918 LANs would break end-to-end connectivity. <code>100.64.0.0/10</code> gives ISPs 4 million addresses that are globally reserved, won't appear in customer networks, and won't leak to the public internet — a clean boundary for the SP-to-CPE link.
+            <div class="detail-note">
+              <strong>Why a new block?</strong> If ISPs used 10.x.x.x for CGNAT, collisions with customers' own RFC 1918 LANs would break end-to-end connectivity. <code>100.64.0.0/10</code> gives ISPs 4M addresses that are globally reserved, won't appear in customer networks, and won't leak to the public internet — a clean boundary for the SP-to-CPE link.
             </div>
             <div class="users-grid">
-              <div class="user-card user-card-tailscale">
+              <div class="user-card">
                 <div class="user-card-header">
-                  <div class="user-card-icon">🦎</div>
-                  <div class="user-card-name">Tailscale</div>
-                  <div class="user-card-tag">WireGuard VPN</div>
+                  <span class="user-card-icon">🦎</span>
+                  <span class="user-card-name">Tailscale</span>
+                  <span class="user-card-tag">WireGuard VPN</span>
                 </div>
-                <div class="user-card-desc">
-                  Tailscale assigns every enrolled device a stable <code>100.x.y.z</code> address (a "Tailscale IP") from the <code>100.64.0.0/10</code> block. Devices reach each other directly over WireGuard tunnels — the overlay works regardless of whether the underlying network is RFC 1918, public, or even another CGNAT. The CGNAT block was chosen precisely because it doesn't overlap with RFC 1918, so Tailscale addresses won't clash with home or office LANs.
-                </div>
+                <p class="user-card-desc">Assigns every enrolled device a stable <code>100.x.y.z</code> Tailscale IP from <code>100.64.0.0/10</code>. Chosen because it doesn't overlap RFC 1918 ranges, so Tailscale IPs won't clash with home or office LANs regardless of the underlying network.</p>
               </div>
-              <div class="user-card user-card-netbird">
+              <div class="user-card">
                 <div class="user-card-header">
-                  <div class="user-card-icon">🐦</div>
-                  <div class="user-card-name">NetBird</div>
-                  <div class="user-card-tag">WireGuard VPN</div>
+                  <span class="user-card-icon">🐦</span>
+                  <span class="user-card-name">NetBird</span>
+                  <span class="user-card-tag">WireGuard VPN</span>
                 </div>
-                <div class="user-card-desc">
-                  NetBird (open-source peer-to-peer VPN) also defaults to the <code>100.64.0.0/10</code> range for its WireGuard overlay. Each peer receives a <code>/32</code> address within the block from the management plane. Admins can override to any private range, but the default mirrors Tailscale's reasoning: CGNAT space avoids RFC 1918 conflicts and is globally non-routable, making it ideal for zero-trust overlays deployed across heterogeneous environments.
-                </div>
+                <p class="user-card-desc">Open-source peer-to-peer VPN that defaults to <code>100.64.0.0/10</code> for its WireGuard overlay. Each peer gets a <code>/32</code> from the management plane. CGNAT space avoids RFC 1918 conflicts and is globally non-routable, ideal for zero-trust overlays.</p>
               </div>
-              <div class="user-card user-card-isp">
+              <div class="user-card">
                 <div class="user-card-header">
-                  <div class="user-card-icon">🏭</div>
-                  <div class="user-card-name">ISP / CGNAT</div>
-                  <div class="user-card-tag">Original use</div>
+                  <span class="user-card-icon">🏭</span>
+                  <span class="user-card-name">ISP / CGNAT</span>
+                  <span class="user-card-tag">Original use</span>
                 </div>
-                <div class="user-card-desc">
-                  The original intent: ISPs assign <code>100.64.x.x</code> addresses to CPE (home router WAN interfaces). The ISP's CGNAT device translates those to a small pool of public IPs. Subscribers share public addresses via PAT. This is why addresses starting with <code>100.64</code>–<code>100.127</code> can show up in <code>traceroute</code> hops — they are SP infrastructure, not your LAN.
-                </div>
+                <p class="user-card-desc">ISPs assign <code>100.64.x.x</code> to CPE WAN interfaces; a CGNAT device translates those to a shared public pool. Addresses in <code>100.64–100.127</code> visible in <code>traceroute</code> hops are SP infrastructure, not your LAN.</p>
               </div>
             </div>
           </div>
@@ -1063,46 +873,63 @@
 
   </div>
 
-  <div class="section-label">02 — ip address inspector</div>
-  <div class="tool-panel panel-ip-lookup">
-    <div class="panel-title">🔍 IP / CIDR Inspector</div>
-    <div class="panel-desc">enter an IPv4 address or CIDR notation (e.g. 10.1.2.3 or 192.168.1.0/24)</div>
-    <div class="input-row">
-      <div class="input-group">
-        <label>IP address or CIDR</label>
-        <input type="text" id="ipInput" placeholder="10.0.0.0/8" autocomplete="off" spellcheck="false">
-      </div>
-      <button class="btn btn-cyan" onclick="runIpLookup()">Inspect</button>
-    </div>
-    <div class="result-area" id="ipResult"></div>
+  <!-- 02 IP INSPECTOR -->
+  <div class="section-label">
+    <span class="section-num">02</span>
+    <span>ip address inspector</span>
+    <span class="section-line"></span>
   </div>
 
-  <div class="section-label">03 — subnet splitter</div>
-  <div class="tool-panel panel-splitter">
-    <div class="panel-title">✂️ Subnet Splitter</div>
-    <div class="panel-desc">split a larger subnet into equal smaller subnets and enumerate them</div>
-    <div class="input-row">
-      <div class="input-group splitter-input">
-        <label>Source CIDR</label>
-        <input type="text" id="splitInput" placeholder="10.0.0.0/8" autocomplete="off" spellcheck="false">
-      </div>
-      <div class="input-group splitter-input">
-        <label>Split into /<span id="splitPrefixLabel">16</span> subnets</label>
-        <input type="range" id="splitPrefix" min="1" max="32" value="16"
-               oninput="document.getElementById('splitPrefixLabel').textContent = this.value"
-               style="margin-top:8px; accent-color: var(--magenta);">
-      </div>
-      <button class="btn btn-magenta" onclick="runSplitter()">Split</button>
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">IP / CIDR Inspector</span>
+      <span class="panel-hint">e.g. 10.1.2.3 &nbsp;or&nbsp; 192.168.1.0/24 &nbsp;or&nbsp; 100.64.0.1</span>
     </div>
-    <div class="result-area" id="splitResult"></div>
+    <div class="panel-body">
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label" for="ipInput">IP address or CIDR</label>
+          <input type="text" id="ipInput" placeholder="10.0.0.0/8" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="btn" onclick="runIpLookup()">Inspect →</button>
+      </div>
+      <div class="result-area" id="ipResult"></div>
+    </div>
+  </div>
+
+  <!-- 03 SPLITTER -->
+  <div class="section-label">
+    <span class="section-num">03</span>
+    <span>subnet splitter</span>
+    <span class="section-line"></span>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Subnet Splitter</span>
+      <span class="panel-hint">split a larger block into equal smaller subnets</span>
+    </div>
+    <div class="panel-body">
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label" for="splitInput">Source CIDR</label>
+          <input type="text" id="splitInput" placeholder="10.0.0.0/8" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="splitPrefix">Target prefix: /<span id="splitPrefixLabel">16</span></label>
+          <input type="range" id="splitPrefix" min="1" max="32" value="16"
+                 oninput="document.getElementById('splitPrefixLabel').textContent = this.value">
+        </div>
+        <button class="btn" onclick="runSplitter()">Split →</button>
+      </div>
+      <div class="result-area" id="splitResult"></div>
+    </div>
   </div>
 
 </div>
 
 <script>
-// ═══════════════════════════════════════════════
-//  THEME
-// ═══════════════════════════════════════════════
+// ── THEME ────────────────────────────────────────
 const STORAGE_KEY = 'cidr-theme';
 
 function getSystemTheme() {
@@ -1111,45 +938,33 @@ function getSystemTheme() {
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  const icon  = document.getElementById('themeIcon');
-  const label = document.getElementById('themeLabel');
-  if (theme === 'dark') { icon.textContent = '☀️'; label.textContent = 'light'; }
-  else                  { icon.textContent = '🌙'; label.textContent = 'dark'; }
+  document.getElementById('themeIcon').textContent  = theme === 'dark' ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = theme === 'dark' ? 'light' : 'dark';
 }
 
 function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme') || getSystemTheme();
-  const next    = current === 'dark' ? 'light' : 'dark';
+  const cur  = document.documentElement.getAttribute('data-theme') || getSystemTheme();
+  const next = cur === 'dark' ? 'light' : 'dark';
   localStorage.setItem(STORAGE_KEY, next);
   applyTheme(next);
 }
 
-// Init: honour saved preference, else let CSS media query handle it but sync button
 (function () {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    applyTheme(saved);
-  } else {
-    // No saved pref — CSS will use media query; just sync the button icon
-    const sys = getSystemTheme();
-    const icon  = document.getElementById('themeIcon');
-    const label = document.getElementById('themeLabel');
-    if (sys === 'dark') { icon.textContent = '☀️'; label.textContent = 'light'; }
-    else                { icon.textContent = '🌙'; label.textContent = 'dark'; }
-    // listen for OS-level changes to keep button in sync
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        const theme = e.matches ? 'dark' : 'light';
-        if (theme === 'dark') { icon.textContent = '☀️'; label.textContent = 'light'; }
-        else                  { icon.textContent = '🌙'; label.textContent = 'dark'; }
-      }
-    });
-  }
+  if (saved) { applyTheme(saved); return; }
+  const sys = getSystemTheme();
+  document.getElementById('themeIcon').textContent  = sys === 'dark' ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = sys === 'dark' ? 'light' : 'dark';
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      const t = e.matches ? 'dark' : 'light';
+      document.getElementById('themeIcon').textContent  = t === 'dark' ? '☀️' : '🌙';
+      document.getElementById('themeLabel').textContent = t === 'dark' ? 'light' : 'dark';
+    }
+  });
 })();
 
-// ═══════════════════════════════════════════════
-//  CIDR MATH
-// ═══════════════════════════════════════════════
+// ── CIDR MATH ────────────────────────────────────
 function ipToInt(ip) {
   const parts = ip.trim().split('.');
   if (parts.length !== 4) return null;
@@ -1176,11 +991,9 @@ function parseCidr(input) {
   let ip, prefix;
   if (input.includes('/')) {
     const [a, b] = input.split('/');
-    ip = ipToInt(a);
-    prefix = parseInt(b, 10);
+    ip = ipToInt(a); prefix = parseInt(b, 10);
   } else {
-    ip = ipToInt(input);
-    prefix = 32;
+    ip = ipToInt(input); prefix = 32;
   }
   if (ip === null || isNaN(prefix) || prefix < 0 || prefix > 32) return null;
   return { ip, prefix };
@@ -1194,54 +1007,51 @@ function cidrInfo(ip, prefix) {
   const usable    = prefix >= 31 ? total : Math.max(0, total - 2);
   const firstHost = prefix >= 31 ? network : (network + 1) >>> 0;
   const lastHost  = prefix >= 31 ? bcast   : (bcast  - 1) >>> 0;
-  return { network, bcast, mask, total, usable, firstHost, lastHost, prefix };
+  return { network, bcast, mask, total, usable, firstHost, lastHost };
 }
 
-function toBin32(n) {
-  return (n >>> 0).toString(2).padStart(32, '0');
-}
+function toBin32(n) { return (n >>> 0).toString(2).padStart(32, '0'); }
+function fmt(n)     { return n.toLocaleString(); }
 
-function fmt(n) { return n.toLocaleString(); }
-
-// ═══════════════════════════════════════════════
-//  RANGE DATA
-// ═══════════════════════════════════════════════
-const RFC1918 = [
-  { cidr: '10.0.0.0/8',      prefix: 8,  cls: 'range-a', label: 'Class A',      rfc: '1918' },
-  { cidr: '172.16.0.0/12',   prefix: 12, cls: 'range-b', label: 'Class B',      rfc: '1918' },
-  { cidr: '192.168.0.0/16',  prefix: 16, cls: 'range-c', label: 'Class C',      rfc: '1918' },
-  { cidr: '100.64.0.0/10',   prefix: 10, cls: 'range-d', label: 'CGNAT/Shared', rfc: '6598' },
+// ── RANGE DATA ───────────────────────────────────
+const RANGES = [
+  { cidr: '10.0.0.0/8',     prefix: 8,  label: 'Class A',      rfc: '1918' },
+  { cidr: '172.16.0.0/12',  prefix: 12, label: 'Class B',      rfc: '1918' },
+  { cidr: '192.168.0.0/16', prefix: 16, label: 'Class C',      rfc: '1918' },
+  { cidr: '100.64.0.0/10',  prefix: 10, label: 'CGNAT/Shared', rfc: '6598' },
 ];
 
-function renderCard(r) {
-  const p    = parseCidr(r.cidr);
-  const info = cidrInfo(p.ip, p.prefix);
-  return `
-  <div class="range-card ${r.cls}">
-    <div class="range-header">
-      <div class="range-cidr">${r.cidr}</div>
-      <div class="range-prefix-badge">${r.label}</div>
-    </div>
-    <div class="range-rows">
-      <div class="range-row"><span class="range-row-label">Network</span><span class="range-row-value">${intToIp(info.network)}</span></div>
-      <div class="range-row"><span class="range-row-label">Subnet Mask</span><span class="range-row-value">${intToIp(info.mask)}</span></div>
-      <div class="range-row"><span class="range-row-label">First Host</span><span class="range-row-value">${intToIp(info.firstHost)}</span></div>
-      <div class="range-row"><span class="range-row-label">Last Host</span><span class="range-row-value">${intToIp(info.lastHost)}</span></div>
-      <div class="range-row"><span class="range-row-label">Broadcast</span><span class="range-row-value">${intToIp(info.bcast)}</span></div>
-      <div class="range-row"><span class="range-row-label">Total IPs</span><span class="range-row-value accent">${fmt(info.total)}</span></div>
-      <div class="range-row"><span class="range-row-label">Usable Hosts</span><span class="range-row-value accent">${fmt(info.usable)}</span></div>
-    </div>
-  </div>`;
+function buildRangeTable(tableId, rfc) {
+  const rows = RANGES.filter(r => r.rfc === rfc);
+  const thead = `<thead><tr>
+    <th>Range</th><th>Label</th><th>Mask</th><th>Network</th>
+    <th>First Host</th><th>Last Host</th><th>Broadcast</th>
+    <th>Total IPs</th><th>Usable Hosts</th>
+  </tr></thead>`;
+  const tbody = '<tbody>' + rows.map(r => {
+    const p    = parseCidr(r.cidr);
+    const info = cidrInfo(p.ip, p.prefix);
+    return `<tr>
+      <td class="td-cidr">${r.cidr}</td>
+      <td>${r.label}</td>
+      <td>${intToIp(info.mask)}</td>
+      <td>${intToIp(info.network)}</td>
+      <td>${intToIp(info.firstHost)}</td>
+      <td>${intToIp(info.lastHost)}</td>
+      <td>${intToIp(info.bcast)}</td>
+      <td>${fmt(info.total)}</td>
+      <td class="td-count">${fmt(info.usable)}</td>
+    </tr>`;
+  }).join('') + '</tbody>';
+  document.getElementById(tableId).innerHTML = thead + tbody;
 }
 
 function buildRangesGrid() {
-  document.getElementById('rfc1918Grid').innerHTML = RFC1918.filter(r => r.rfc === '1918').map(renderCard).join('');
-  document.getElementById('rfc6598Grid').innerHTML = RFC1918.filter(r => r.rfc === '6598').map(renderCard).join('');
+  buildRangeTable('rfc1918Table', '1918');
+  buildRangeTable('rfc6598Table', '6598');
 }
 
-// ═══════════════════════════════════════════════
-//  ACCORDION
-// ═══════════════════════════════════════════════
+// ── ACCORDION ────────────────────────────────────
 function toggleAcc(id) {
   const block  = document.getElementById(id);
   const bodyId = id.replace('acc-', 'body-');
@@ -1250,16 +1060,14 @@ function toggleAcc(id) {
   const isOpen = block.classList.contains('open');
 
   if (isOpen) {
-    // Collapse: fix height first, then animate to 0
     body.style.maxHeight = body.scrollHeight + 'px';
     requestAnimationFrame(() => {
-      body.style.transition = 'max-height 0.35s ease';
+      body.style.transition = 'max-height 0.32s ease';
       body.style.maxHeight  = '0';
     });
     block.classList.remove('open');
     btn.setAttribute('aria-expanded', 'false');
   } else {
-    // Expand
     block.classList.add('open');
     btn.setAttribute('aria-expanded', 'true');
     body.style.maxHeight = body.scrollHeight + 'px';
@@ -1269,11 +1077,9 @@ function toggleAcc(id) {
   }
 }
 
-// ═══════════════════════════════════════════════
-//  IP LOOKUP
-// ═══════════════════════════════════════════════
-function isPrivate(ipInt) {
-  for (const r of RFC1918) {
+// ── IP LOOKUP ────────────────────────────────────
+function isReserved(ipInt) {
+  for (const r of RANGES) {
     const p    = parseCidr(r.cidr);
     const mask = prefixToMask(p.prefix);
     if ((ipInt & mask) >>> 0 === (p.ip & mask) >>> 0) return r;
@@ -1282,12 +1088,12 @@ function isPrivate(ipInt) {
 }
 
 function buildBitDisplay(ip, prefix) {
-  const ipBits = toBin32(ip);
-  const mkBits = toBin32(prefixToMask(prefix));
+  const ipBits   = toBin32(ip);
+  const maskBits = toBin32(prefixToMask(prefix));
 
   function render(bits, colorFn) {
-    return '<div class="bit-octets">' + [0,1,2,3].map(o =>
-      '<div class="bit-octet">' + [0,1,2,3,4,5,6,7].map(b => {
+    return '<div class="bit-octets">' + [0, 1, 2, 3].map(o =>
+      '<div class="bit-octet">' + [0, 1, 2, 3, 4, 5, 6, 7].map(b => {
         const i   = o * 8 + b;
         const cls = colorFn(i, bits[i]);
         return `<div class="bit ${cls}">${bits[i]}</div>`;
@@ -1295,20 +1101,23 @@ function buildBitDisplay(ip, prefix) {
     ).join('') + '</div>';
   }
 
-  const ipHtml   = render(ipBits,  (i, v) => (i < prefix ? 'net ' : 'host ') + (v === '1' ? 'one' : 'zero'));
-  const maskHtml = render(mkBits,  (i, v) => v === '1' ? 'net one' : 'host zero');
+  const ipHtml   = render(ipBits,   (i, v) => (i < prefix ? 'n' : 'h') + v);
+  const maskHtml = render(maskBits, (i, v) => v === '1' ? 'n1' : 'h0');
+
+  const legend = `
+    <div class="bit-legend">
+      <span><span class="bit-swatch" style="background:var(--accent)"></span> network bit=1</span>
+      <span><span class="bit-swatch" style="background:color-mix(in srgb,var(--accent) 18%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent)"></span> network bit=0</span>
+      <span><span class="bit-swatch" style="background:var(--border-2)"></span> host bit=1</span>
+      <span><span class="bit-swatch" style="background:var(--surface-2);border:1px solid var(--border)"></span> host bit=0</span>
+    </div>`;
 
   return `
-    <div class="bit-display">
-      <div class="bit-row"><span class="bit-label">IP Address</span>${ipHtml}</div>
-      <div class="bit-row"><span class="bit-label">Subnet Mask</span>${maskHtml}</div>
+    <div class="bit-wrap">
+      <div class="bit-row"><span class="bit-row-label">IP Address</span>${ipHtml}</div>
+      <div class="bit-row"><span class="bit-row-label">Subnet Mask</span>${maskHtml}</div>
     </div>
-    <div class="bit-legend">
-      <span style="color:var(--cyan)">■</span> network bits (/${prefix}) &nbsp;
-      <span style="color:var(--magenta)">■</span> host bits &nbsp;
-      <span style="color:var(--green)">■</span> bit=1 &nbsp;
-      <span style="color:var(--muted)">■</span> bit=0
-    </div>`;
+    ${legend}`;
 }
 
 function runIpLookup() {
@@ -1317,53 +1126,47 @@ function runIpLookup() {
 
   const parsed = parseCidr(document.getElementById('ipInput').value);
   if (!parsed) {
-    el.innerHTML = `<div class="result-error">⚠ Invalid input. Try 10.1.2.3 or 192.168.1.0/24</div>`;
+    el.innerHTML = `<div class="msg err">⚠ Invalid input — try 10.1.2.3 or 192.168.1.0/24</div>`;
     el.classList.add('visible'); return;
   }
 
   const { ip, prefix } = parsed;
   const info = cidrInfo(ip, prefix);
-  const priv = isPrivate(ip);
-
-  const hlCls = priv
-    ? ({ 'range-a': 'hl-cyan', 'range-b': 'hl-mag', 'range-c': 'hl-green', 'range-d': 'hl-orange' }[priv.cls] || '')
-    : '';
+  const res  = isReserved(ip);
 
   let banner;
-  if (!priv) {
-    banner = `<div class="private-banner is-public">⚡ Public address — not in any reserved private range</div>`;
-  } else if (priv.rfc === '6598') {
-    banner = `<div class="private-banner is-cgnat">🛰️ RFC 6598 Shared Address Space — <strong>${priv.cidr}</strong> (CGNAT / Tailscale / NetBird overlay range)</div>`;
+  if (!res) {
+    banner = `<div class="msg muted">○ Public address — not in any reserved range</div>`;
+  } else if (res.rfc === '6598') {
+    banner = `<div class="msg cgnat">⚡ RFC 6598 Shared Address Space — <strong>${res.cidr}</strong> (CGNAT / Tailscale / NetBird)</div>`;
   } else {
-    banner = `<div class="private-banner is-private">✓ RFC 1918 Private — falls within <strong>${priv.cidr}</strong> (${priv.label})</div>`;
+    banner = `<div class="msg ok">✓ RFC 1918 Private — <strong>${res.cidr}</strong> (${res.label})</div>`;
   }
 
-  const cards = [
-    { label: 'IP Address',      value: intToIp(ip),              cls: hlCls },
-    { label: 'Network Address', value: intToIp(info.network),    cls: hlCls },
-    { label: 'Subnet Mask',     value: intToIp(info.mask),       cls: '' },
-    { label: 'Broadcast',       value: intToIp(info.bcast),      cls: '' },
-    { label: 'First Host',      value: intToIp(info.firstHost),  cls: '' },
-    { label: 'Last Host',       value: intToIp(info.lastHost),   cls: '' },
-    { label: 'Total IPs',       value: fmt(info.total),          cls: hlCls },
-    { label: 'Usable Hosts',    value: fmt(info.usable),         cls: hlCls },
-    { label: 'Prefix',          value: `/${prefix}`,             cls: '' },
-    { label: 'Wildcard',        value: intToIp(~info.mask >>> 0), cls: '' },
+  const cells = [
+    { label: 'IP Address',   value: intToIp(ip),               accent: !!res },
+    { label: 'Network',      value: intToIp(info.network),     accent: !!res },
+    { label: 'Subnet Mask',  value: intToIp(info.mask),        accent: false },
+    { label: 'Broadcast',    value: intToIp(info.bcast),       accent: false },
+    { label: 'First Host',   value: intToIp(info.firstHost),   accent: false },
+    { label: 'Last Host',    value: intToIp(info.lastHost),    accent: false },
+    { label: 'Wildcard',     value: intToIp(~info.mask >>> 0), accent: false },
+    { label: 'Prefix',       value: `/${prefix}`,              accent: false },
+    { label: 'Total IPs',    value: fmt(info.total),           accent: !!res },
+    { label: 'Usable Hosts', value: fmt(info.usable),          accent: !!res },
   ];
 
-  const grid = `<div class="ip-result-grid">${cards.map(c =>
-    `<div class="ip-result-card ${c.cls}">
-      <div class="card-label">${c.label}</div>
-      <div class="card-value">${c.value}</div>
+  const grid = `<div class="ip-grid">${cells.map(c =>
+    `<div class="ip-cell${c.accent ? ' accent' : ''}">
+      <div class="ip-cell-label">${c.label}</div>
+      <div class="ip-cell-value">${c.value}</div>
     </div>`).join('')}</div>`;
 
   el.innerHTML = banner + grid + buildBitDisplay(ip, prefix);
   el.classList.add('visible');
 }
 
-// ═══════════════════════════════════════════════
-//  SUBNET SPLITTER
-// ═══════════════════════════════════════════════
+// ── SPLITTER ─────────────────────────────────────
 const MAX_ROWS = 256;
 
 function runSplitter() {
@@ -1374,13 +1177,13 @@ function runSplitter() {
   const newPrefix = parseInt(document.getElementById('splitPrefix').value, 10);
 
   if (!parsed) {
-    el.innerHTML = `<div class="result-error">⚠ Invalid CIDR. Try 10.0.0.0/8</div>`;
+    el.innerHTML = `<div class="msg err">⚠ Invalid CIDR — try 10.0.0.0/8</div>`;
     el.classList.add('visible'); return;
   }
 
   const { ip, prefix } = parsed;
   if (newPrefix <= prefix) {
-    el.innerHTML = `<div class="result-error">⚠ Target prefix /${newPrefix} must be larger (more specific) than source /${prefix}</div>`;
+    el.innerHTML = `<div class="msg err">⚠ Target /${newPrefix} must be more specific than source /${prefix}</div>`;
     el.classList.add('visible'); return;
   }
 
@@ -1391,28 +1194,27 @@ function runSplitter() {
   const usablePerSub = newPrefix >= 31 ? hostsPerSub : Math.max(0, hostsPerSub - 2);
   const display      = Math.min(subnetCount, MAX_ROWS);
 
-  const summary = `
-    <div class="split-summary">
-      <div class="split-stat">
-        <div class="stat-label">Source Network</div>
-        <div class="stat-value" style="font-size:15px;color:var(--cyan)">${intToIp(info.network)}/${prefix}</div>
-      </div>
-      <div class="split-stat">
-        <div class="stat-label">Subnet Count</div>
-        <div class="stat-value">${fmt(subnetCount)}</div>
-        <div class="stat-sub">/${newPrefix} subnets</div>
-      </div>
-      <div class="split-stat">
-        <div class="stat-label">IPs / Subnet</div>
-        <div class="stat-value">${fmt(hostsPerSub)}</div>
-        <div class="stat-sub">${fmt(usablePerSub)} usable hosts</div>
-      </div>
-      <div class="split-stat">
-        <div class="stat-label">Prefix Change</div>
-        <div class="stat-value" style="color:var(--violet)">+${delta}</div>
-        <div class="stat-sub">/${prefix} → /${newPrefix}</div>
-      </div>
-    </div>`;
+  const stats = `<div class="split-stats">
+    <div class="split-stat">
+      <div class="stat-label">Source</div>
+      <div class="stat-val sm">${intToIp(info.network)}/${prefix}</div>
+    </div>
+    <div class="split-stat">
+      <div class="stat-label">Subnets</div>
+      <div class="stat-val">${fmt(subnetCount)}</div>
+      <div class="stat-sub">/${newPrefix} each</div>
+    </div>
+    <div class="split-stat">
+      <div class="stat-label">IPs / Subnet</div>
+      <div class="stat-val">${fmt(hostsPerSub)}</div>
+      <div class="stat-sub">${fmt(usablePerSub)} usable</div>
+    </div>
+    <div class="split-stat">
+      <div class="stat-label">Prefix Delta</div>
+      <div class="stat-val">+${delta}</div>
+      <div class="stat-sub">/${prefix} → /${newPrefix}</div>
+    </div>
+  </div>`;
 
   let rows = '';
   for (let i = 0; i < display; i++) {
@@ -1422,34 +1224,32 @@ function runSplitter() {
     const last    = newPrefix >= 31 ? bcast   : (bcast  - 1) >>> 0;
     rows += `<tr>
       <td class="td-idx">${i + 1}</td>
-      <td class="td-network">${intToIp(netAddr)}/${newPrefix}</td>
-      <td class="td-first">${intToIp(first)}</td>
-      <td class="td-last">${intToIp(last)}</td>
-      <td class="td-bcast">${intToIp(bcast)}</td>
+      <td class="td-net">${intToIp(netAddr)}/${newPrefix}</td>
+      <td>${intToIp(first)}</td>
+      <td>${intToIp(last)}</td>
+      <td>${intToIp(bcast)}</td>
       <td class="td-count">${fmt(usablePerSub)}</td>
     </tr>`;
   }
 
   const trunc = subnetCount > MAX_ROWS
-    ? `<div class="truncation-note">showing first ${MAX_ROWS} of ${fmt(subnetCount)} subnets</div>`
+    ? `<div class="trunc-note">showing first ${MAX_ROWS.toLocaleString()} of ${fmt(subnetCount)} subnets</div>`
     : '';
 
-  el.innerHTML = summary + `
-    <div class="subnet-table-wrap">
-      <table>
-        <thead><tr>
-          <th>#</th><th>Network</th><th>First Host</th>
-          <th>Last Host</th><th>Broadcast</th>
-          <th style="text-align:right">Usable Hosts</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-      ${trunc}
-    </div>`;
+  el.innerHTML = stats + `<div class="data-wrap">
+    <table class="data-table">
+      <thead><tr>
+        <th>#</th><th>Network</th><th>First Host</th>
+        <th>Last Host</th><th>Broadcast</th><th>Usable Hosts</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${trunc}
+  </div>`;
   el.classList.add('visible');
 }
 
-// ─── keyboard shortcuts ───
+// ── KEYBOARD ─────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     if (document.activeElement.id === 'ipInput')    runIpLookup();
