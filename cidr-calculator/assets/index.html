@@ -916,6 +916,7 @@
           <input type="text" id="ipInput" placeholder="10.0.0.0/8" autocomplete="off" spellcheck="false">
         </div>
         <button class="btn" onclick="runIpLookup()">Inspect →</button>
+        <button class="share-btn" onclick="shareIp()" id="shareIpBtn">Share</button>
       </div>
       <div class="result-area" id="ipResult"></div>
     </div>
@@ -945,6 +946,7 @@
                  oninput="document.getElementById('splitPrefixLabel').textContent = this.value">
         </div>
         <button class="btn" onclick="runSplitter()">Split →</button>
+        <button class="share-btn" onclick="shareSplit()" id="shareSplitBtn">Share</button>
       </div>
       <div class="result-area" id="splitResult"></div>
     </div>
@@ -1282,6 +1284,76 @@ document.addEventListener('keydown', e => {
 });
 
 buildRangesGrid();
+
+// ── URL QUERY STRING SYNC ───────────────────────
+function updateUrl() {
+  const params = new URLSearchParams();
+  const ipVal    = document.getElementById('ipInput').value.trim();
+  const splitVal = document.getElementById('splitInput').value.trim();
+  const prefix   = document.getElementById('splitPrefix').value;
+
+  if (ipVal)    params.set('ip', ipVal);
+  if (splitVal) params.set('split', splitVal);
+  if (splitVal) params.set('prefix', prefix);
+
+  const qs = params.toString();
+  const url = qs ? `${location.pathname}?${qs}` : location.pathname;
+  history.replaceState(null, '', url);
+}
+
+// Update URL after each action
+const _origIpLookup  = runIpLookup;
+const _origSplitter  = runSplitter;
+runIpLookup  = function() { _origIpLookup();  updateUrl(); };
+runSplitter  = function() { _origSplitter();   updateUrl(); };
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+function shareIp() {
+  const ipVal = document.getElementById('ipInput').value.trim();
+  if (!ipVal) return;
+  const url = new URL(location.href);
+  url.search = '?ip=' + encodeURIComponent(ipVal);
+  copyToClipboard(url.toString(), document.getElementById('shareIpBtn'));
+}
+
+function shareSplit() {
+  const splitVal = document.getElementById('splitInput').value.trim();
+  if (!splitVal) return;
+  const prefix = document.getElementById('splitPrefix').value;
+  const url = new URL(location.href);
+  url.search = '?split=' + encodeURIComponent(splitVal) + '&prefix=' + prefix;
+  copyToClipboard(url.toString(), document.getElementById('shareSplitBtn'));
+}
+
+// ── LOAD FROM URL ON PAGE INIT ──────────────────
+(function loadFromUrl() {
+  const params = new URLSearchParams(location.search);
+
+  if (params.has('ip')) {
+    document.getElementById('ipInput').value = params.get('ip');
+    runIpLookup();
+  }
+
+  if (params.has('split')) {
+    document.getElementById('splitInput').value = params.get('split');
+    if (params.has('prefix')) {
+      const p = parseInt(params.get('prefix'), 10);
+      if (p >= 1 && p <= 32) {
+        document.getElementById('splitPrefix').value = p;
+        document.getElementById('splitPrefixLabel').textContent = p;
+      }
+    }
+    runSplitter();
+  }
+})();
 </script>
 </body>
 </html>
