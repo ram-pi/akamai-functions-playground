@@ -773,8 +773,32 @@
     .panel-hint { display: none; }
     .input-row  { flex-direction: column; }
     .btn        { align-self: stretch; width: 100%; }
+    .share-btn  { width: 100%; }
     .bit        { width: 8px; font-size: 7px; }
   }
+
+  /* ── SHARE BUTTON ──────────────────────────────── */
+  .share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 36px;
+    padding: 0 14px;
+    background: var(--surface);
+    color: var(--text-2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .share-btn:hover { border-color: var(--border-2); color: var(--text); }
+  .share-btn.copied { border-color: var(--ok-text); color: var(--ok-text); }
 </style>
 </head>
 <body>
