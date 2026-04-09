@@ -123,13 +123,20 @@
     color: var(--accent);
   }
 
-  /* ── THEME TOGGLE ───────────────────────────── */
-  .theme-toggle {
+  /* ── TOP-RIGHT CONTROLS ─────────────────────── */
+  .top-controls {
     position: fixed;
     top: 14px; right: 16px;
     z-index: 100;
     display: inline-flex;
     align-items: center;
+    gap: 6px;
+  }
+
+  .top-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     gap: 5px;
     padding: 5px 11px;
     background: var(--surface);
@@ -141,7 +148,9 @@
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
   }
-  .theme-toggle:hover { border-color: var(--border-2); color: var(--text); }
+  .top-btn:hover { border-color: var(--border-2); color: var(--text); }
+  .top-btn.copied { border-color: var(--ok-text); color: var(--ok-text); }
+  .top-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
 
   /* ── HEADER ──────────────────────────────────── */
   header {
@@ -773,40 +782,22 @@
     .panel-hint { display: none; }
     .input-row  { flex-direction: column; }
     .btn        { align-self: stretch; width: 100%; }
-    .share-btn  { width: 100%; }
     .bit        { width: 8px; font-size: 7px; }
   }
 
-  /* ── SHARE BUTTON ──────────────────────────────── */
-  .share-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    height: 36px;
-    padding: 0 14px;
-    background: var(--surface);
-    color: var(--text-2);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .share-btn:hover { border-color: var(--border-2); color: var(--text); }
-  .share-btn.copied { border-color: var(--ok-text); color: var(--ok-text); }
 </style>
 </head>
 <body>
 
-<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">
-  <span id="themeIcon">🌙</span>
-  <span id="themeLabel">dark</span>
-</button>
+<div class="top-controls">
+  <button class="top-btn" onclick="shareState()" id="shareBtn" aria-label="Share">
+    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+  </button>
+  <button class="top-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">
+    <span id="themeIcon">🌙</span>
+    <span id="themeLabel">dark</span>
+  </button>
+</div>
 
 <header>
   <div class="badge">RFC 1918 · RFC 6598 · IPv4</div>
@@ -916,7 +907,6 @@
           <input type="text" id="ipInput" placeholder="10.0.0.0/8" autocomplete="off" spellcheck="false">
         </div>
         <button class="btn" onclick="runIpLookup()">Inspect →</button>
-        <button class="share-btn" onclick="shareIp()" id="shareIpBtn">Share</button>
       </div>
       <div class="result-area" id="ipResult"></div>
     </div>
@@ -946,7 +936,6 @@
                  oninput="document.getElementById('splitPrefixLabel').textContent = this.value">
         </div>
         <button class="btn" onclick="runSplitter()">Split →</button>
-        <button class="share-btn" onclick="shareSplit()" id="shareSplitBtn">Share</button>
       </div>
       <div class="result-area" id="splitResult"></div>
     </div>
@@ -1307,30 +1296,30 @@ const _origSplitter  = runSplitter;
 runIpLookup  = function() { _origIpLookup();  updateUrl(); };
 runSplitter  = function() { _origSplitter();   updateUrl(); };
 
-function copyToClipboard(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
-  });
-}
-
-function shareIp() {
-  const ipVal = document.getElementById('ipInput').value.trim();
-  if (!ipVal) return;
-  const url = new URL(location.href);
-  url.search = '?ip=' + encodeURIComponent(ipVal);
-  copyToClipboard(url.toString(), document.getElementById('shareIpBtn'));
-}
-
-function shareSplit() {
+function shareState() {
+  const btn = document.getElementById('shareBtn');
+  const ipVal    = document.getElementById('ipInput').value.trim();
   const splitVal = document.getElementById('splitInput').value.trim();
-  if (!splitVal) return;
-  const prefix = document.getElementById('splitPrefix').value;
+
+  if (!ipVal && !splitVal) return;
+
   const url = new URL(location.href);
-  url.search = '?split=' + encodeURIComponent(splitVal) + '&prefix=' + prefix;
-  copyToClipboard(url.toString(), document.getElementById('shareSplitBtn'));
+  url.search = '';
+  if (ipVal)    url.searchParams.set('ip', ipVal);
+  if (splitVal) {
+    url.searchParams.set('split', splitVal);
+    url.searchParams.set('prefix', document.getElementById('splitPrefix').value);
+  }
+
+  navigator.clipboard.writeText(url.toString()).then(() => {
+    const svg = btn.querySelector('svg');
+    svg.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      svg.innerHTML = '<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>';
+      btn.classList.remove('copied');
+    }, 1500);
+  });
 }
 
 // ── LOAD FROM URL ON PAGE INIT ──────────────────
